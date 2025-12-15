@@ -33,14 +33,14 @@ export default function ProfilePage() {
       .then(res => res.json())
       .then(userData => {
         setUser(userData);
-        setForm({
-          ...form,
+        setForm(prev => ({
+          ...prev,
           ...userData,
           fname: userData.fname,
           lname: userData.lname,
           oldEmail: userData.email,
           oldPhone: userData.phone,
-        });
+        }));
         if (userData.image) setPreview(userData.image);
       });
   }, []);
@@ -50,8 +50,8 @@ export default function ProfilePage() {
     setError('');
     setSuccess('');
     
-    const requiredFields = ['fname', 'lname', 'email', 'phone', 'address', 'organization'];
-    for (let key of requiredFields) {
+    const requiredFields = ['fname', 'lname', 'email', 'phone', 'address', 'organization'] as const;
+    for (const key of requiredFields) {
       if (!form[key as keyof typeof form]) {
         setError('❌ กรุณากรอกข้อมูลให้ครบทุกช่อง');
         setIsLoading(false);

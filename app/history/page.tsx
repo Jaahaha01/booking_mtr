@@ -26,7 +26,7 @@ export default function BookingHistoryPage() {
       try {
         const res = await fetch("/api/bookings/my-bookings");
         const data = await res.json();
-        let allBookings = Array.isArray(data) ? data : Array.isArray(data.data) ? data.data : [];
+        const allBookings = Array.isArray(data) ? data : Array.isArray(data.data) ? data.data : [];
         setBookings(
           allBookings.filter(
             (b: any) => b.status === "confirmed" || b.status === "cancelled"

@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState<'login' | 'forgot'>('login');
+  const [activeTab] = useState<'login' | 'forgot'>('login');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -51,7 +51,7 @@ export default function LoginPage() {
           router.push("/");
         }
       }
-    } catch (err) {
+    } catch {
       setError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
       setIsLoading(false);
     }
@@ -78,7 +78,7 @@ export default function LoginPage() {
       } else {
         setError(data.message || "เกิดข้อผิดพลาด");
       }
-    } catch (err) {
+    } catch {
       setError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
     } finally {
       setIsLoading(false);
