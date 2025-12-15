@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // TODO: Adjust the path below if your db file is elsewhere
 import { db } from "@/lib/db";
 import { cookies } from 'next/headers';

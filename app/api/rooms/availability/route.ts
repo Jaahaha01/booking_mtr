@@ -1,5 +1,6 @@
 // app/api/rooms/availability/route.ts
 import { NextResponse } from "next/server";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { db } from "@/lib/db";
 
 type RoomRow = {
