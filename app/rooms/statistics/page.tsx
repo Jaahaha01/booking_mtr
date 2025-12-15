@@ -1,6 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+const AdminSidebar = dynamic(() => import('../../components/AdminSidebar'), { ssr: false });
 
 interface RoomStats {
   id: number;
@@ -62,7 +65,8 @@ export default function RoomStatisticsPage() {
       } else {
         setError(data.error || 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Failed to fetch statistics:', error);
       setError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
     } finally {
       setLoading(false);
@@ -146,8 +150,7 @@ export default function RoomStatisticsPage() {
       {/* Sidebar */}
       <div className="hidden md:block">
         <div className="w-64">
-          {/* @ts-ignore-next-line */}
-          {require('../../components/AdminSidebar').default()}
+          <AdminSidebar />
         </div>
       </div>
       {/* Main Content */}

@@ -2,6 +2,7 @@
 
 
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import AdminSidebar from '@/app/components/AdminSidebar';
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';

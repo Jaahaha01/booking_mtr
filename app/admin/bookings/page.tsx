@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -109,7 +110,7 @@ export default function AdminBookingsPage() {
   if (!window.confirm(confirmText)) return;
   setUpdating(bookingId);
   try {
-    let body: any = { status: newStatus };
+  const body = { status: newStatus, confirmed_by: null as number | null, cancelled_by: null as number | null };
     // If reset (คืนค่า), also reset confirmed_by and cancelled_by
     if (newStatus === 'pending') {
       body.confirmed_by = null;

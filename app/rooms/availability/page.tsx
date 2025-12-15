@@ -16,16 +16,6 @@ interface Room {
   };
 }
 
-interface RoomSchedule {
-  id: number;
-  room_id: number;
-  day_of_week: string;
-  start_time: string;
-  end_time: string;
-  class_name: string;
-  instructor: string;
-}
-
 interface AvailabilityData {
   rooms: Room[];
   checkedAt: string;
@@ -53,7 +43,8 @@ export default function RoomAvailabilityPage() {
       } else {
         setError(data.error || 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Failed to fetch availability:', error);
       setError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
     } finally {
       setLoading(false);
@@ -66,24 +57,6 @@ export default function RoomAvailabilityPage() {
     const interval = setInterval(fetchAvailability, 30000);
     return () => clearInterval(interval);
   }, []);
-
-
-  const formatTime = (dateTimeString: string) => {
-    const date = new Date(dateTimeString);
-    return date.toLocaleTimeString('th-TH', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const formatDate = (dateTimeString: string) => {
-    const date = new Date(dateTimeString);
-    return date.toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
 
   if (loading && !availabilityData) {
     return (

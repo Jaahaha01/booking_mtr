@@ -9,6 +9,12 @@ interface VerifyForm {
   organization: string;
 }
 
+type VerificationStatus = 'approved' | 'pending' | 'rejected' | string;
+
+interface UserProfile extends Record<string, unknown> {
+  verification_status?: VerificationStatus;
+}
+
 export default function VerifyIdentityPage() {
   const router = useRouter();
   const [form, setForm] = useState<VerifyForm>({
@@ -20,7 +26,7 @@ export default function VerifyIdentityPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     // ตรวจสอบการเข้าสู่ระบบ
@@ -32,7 +38,7 @@ export default function VerifyIdentityPage() {
           return;
         }
         
-        const userData = await response.json();
+        const userData: UserProfile = await response.json();
         setUser(userData);
 
         // ถ้ายืนยันตัวตนแล้ว ให้ไปหน้าหลัก
@@ -115,7 +121,8 @@ export default function VerifyIdentityPage() {
         router.push('/');
       }, 3000);
 
-    } catch (err) {
+    } catch (error) {
+      console.error('Failed to submit verification:', error);
       setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
     } finally {
       setSubmitting(false);
