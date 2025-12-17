@@ -1,10 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import EquipmentSection from '@/app/components/EquipmentSection';
 
-export default function EditBookingPage({ params }: { params: { id: string } }) {
+export default function EditBookingPage() {
   // Room state
   const [rooms, setRooms] = useState<any[]>([]);
   // Equipment state
@@ -28,7 +28,8 @@ export default function EditBookingPage({ params }: { params: { id: string } }) 
   const [originalTimes, setOriginalTimes] = useState<{start: string, end: string}>({start: '', end: ''});
 
   const router = useRouter();
-  const { id } = params;
+  const params = useParams();
+  const id = params.id as string;
 
   // Parse notes to equipment state
   useEffect(() => {

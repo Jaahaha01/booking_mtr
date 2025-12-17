@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const cookieStore = await cookies();
   const adminId = cookieStore.get('user_id')?.value;
@@ -59,7 +59,7 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const cookieStore = await cookies();
   const adminId = cookieStore.get('user_id')?.value;

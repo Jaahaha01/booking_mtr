@@ -11,8 +11,8 @@ type UserRow = {
 };
 
 export async function authenticate(username: string, password: string) {
-  const [rows] = await db.query<UserRow[]>("SELECT * FROM users WHERE username = ?", [username]);
-  const user = rows[0];
+  const [rows] = await db.query("SELECT * FROM users WHERE username = ?", [username]);
+  const user = (rows as UserRow[])[0];
 
   if (user && await bcrypt.compare(password, user.password)) {
     return { id: user.id, username: user.username, role: user.role };
