@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import { db } from '@/lib/db';
 
-const dbConfig = {
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'booking_db'
-};
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const connection = await mysql.createConnection(dbConfig);
-    
     // Get current date for filtering
   const now = new Date();
   // รับ month/year จาก query string
@@ -136,15 +129,13 @@ export async function GET(request: NextRequest) {
     `;
     
   // Execute all queries
-  const [mostBookedRows] = await connection.execute(mostBookedQuery);
-  const [monthlyBookedRows] = await connection.execute(monthlyBookedQuery, [currentMonth, currentYear]);
-  const [weeklyBookedRows] = await connection.execute(weeklyBookedQuery, [weekStartStr, weekEndStr]);
-  const [dailyBookedRows] = await connection.execute(dailyBookedQuery, [todayStr]);
-  const [dayOfWeekRows] = await connection.execute(dayOfWeekQuery, [currentMonth, currentYear]);
-  const [peakHoursRows] = await connection.execute(peakHoursQuery, [currentMonth, currentYear]);
-  const [recentBookingsRows] = await connection.execute(recentBookingsQuery);
-    
-    await connection.end();
+  const [mostBookedRows] = await db.execute(mostBookedQuery);
+  const [monthlyBookedRows] = await db.execute(monthlyBookedQuery, [currentMonth, currentYear]);
+  const [weeklyBookedRows] = await db.execute(weeklyBookedQuery, [weekStartStr, weekEndStr]);
+  const [dailyBookedRows] = await db.execute(dailyBookedQuery, [todayStr]);
+  const [dayOfWeekRows] = await db.execute(dayOfWeekQuery, [currentMonth, currentYear]);
+  const [peakHoursRows] = await db.execute(peakHoursQuery, [currentMonth, currentYear]);
+  const [recentBookingsRows] = await db.execute(recentBookingsQuery);
     
     // Process results
     const statistics = {

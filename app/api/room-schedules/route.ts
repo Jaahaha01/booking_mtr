@@ -1,15 +1,9 @@
 import { NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import { db } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-  // กำหนดค่าการเชื่อมต่อฐานข้อมูล
-  const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'booking_db',
-  });
-
   try {
     const url = new URL(req.url);
     const roomId = url.searchParams.get('room_id');
@@ -22,7 +16,7 @@ export async function GET(req: Request) {
       params.push(roomId);
     }
 
-    const [rows] = await connection.execute(query, params);
+    const [rows] = await db.execute(query, params);
     return NextResponse.json(rows);
   } catch (error) {
     let details = '';
@@ -34,7 +28,5 @@ export async function GET(req: Request) {
       details = 'Unknown error';
     }
     return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการดึงข้อมูล', details }, { status: 500 });
-  } finally {
-    await connection.end();
   }
 }
