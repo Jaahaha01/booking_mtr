@@ -7,8 +7,11 @@ export async function GET() {
   const id = cookieStore.get('user_id')?.value;
   if (!id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const [rows]: any = await db.query('SELECT * FROM users WHERE user_id = ?', [id]);
-  const user = rows?.[0];
+  const result = await db.execute({
+    sql: 'SELECT * FROM users WHERE user_id = ?',
+    args: [id]
+  });
+  const user = result.rows[0];
   
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -39,11 +42,12 @@ export async function PUT(req: NextRequest) {
   const id = cookieStore.get('user_id')?.value;
   const body = await req.json();
 
-  await db.query(`
-    UPDATE users SET 
-      fname=?, lname=?, email=?, phone=?, address=?, organization=?, image=? 
-      WHERE user_id=?`, 
-      [body.fname, body.lname, body.email, body.phone, body.address, body.organization, body.image, id]);
+  await db.execute({
+    sql: `UPDATE users SET
+      full_name=?, email=?, phone=?, department=?
+      WHERE user_id=?`,
+    args: [body.full_name, body.email, body.phone, body.department, id]
+  });
 
   if (body.passwordOld && body.passwordNew) {
   const [user]: any = await db.query('SELECT password FROM users WHERE user_id = ?', [id]);
