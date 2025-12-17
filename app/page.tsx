@@ -1,6 +1,5 @@
 // app/page.tsx
 'use client'
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import FullCalendar from './components/Calendar'
 import { useEffect, useState } from 'react'
 import ClassScheduleSection from './components/ClassScheduleSection'

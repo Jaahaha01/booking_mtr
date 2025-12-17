@@ -162,7 +162,7 @@ export default function Chatbot() {
     await new Promise(resolve => setTimeout(resolve, 400));
 
     let response = '';
-    let options: string[] = quickQuestions;
+    const options: string[] = quickQuestions;
     const message = userMessage.toLowerCase();
 
     if (message.includes('ว่าง')) {

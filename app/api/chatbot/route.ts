@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export async function GET() {
 	// ดึงข้อมูลห้องประชุมจาก API ห้องว่าง

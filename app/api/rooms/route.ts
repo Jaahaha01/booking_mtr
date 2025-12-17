@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { db } from "@/lib/db";
 
 // GET - ดึงข้อมูลห้องประชุมทั้งหมด

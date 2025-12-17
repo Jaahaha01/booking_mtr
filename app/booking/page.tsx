@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -567,7 +566,7 @@ export default function BookingForm() {
                       <option value="">-- เลือกช่วงเวลา --</option>
                       {(() => {
                         const now = new Date();
-                        let dateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
+                        const dateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
                         const slotEnds = {
                           morning: dateStr ? new Date(`${dateStr}T12:00:00`) : null,
                           afternoon: dateStr ? new Date(`${dateStr}T17:00:00`) : null,
@@ -714,7 +713,7 @@ export default function BookingForm() {
                   <li>• ตรวจสอบอุปกรณ์ที่จำเป็นก่อนจอง</li>
                   <li>• จองล่วงหน้าอย่างน้อย 1 ชั่วโมง</li>
                   <li>• ยกเลิกการจองหากไม่สามารถใช้ได้</li>
-                  <li>• ห้องที่มีสถานะ "ไม่ว่าง" จะไม่สามารถจองได้</li>
+                  <li>• ห้องที่มีสถานะ &quot;ไม่ว่าง&quot; จะไม่สามารถจองได้</li>
                 </ul>
               </div>
             </div>
