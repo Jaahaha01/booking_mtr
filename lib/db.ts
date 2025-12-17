@@ -1,18 +1,22 @@
 import mysql from "mysql2/promise";
 
-const dbConfig = {
+const dbConfig: any = {
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "",
   database: process.env.DB_NAME || "booking_db",
-  ssl: process.env.DB_SSL_CA ? {
-    ca: process.env.DB_SSL_CA
-  } : false,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
   connectTimeout: 60000,
 };
+
+// Add SSL config only if DB_SSL_CA is provided
+if (process.env.DB_SSL_CA) {
+  dbConfig.ssl = {
+    ca: process.env.DB_SSL_CA
+  };
+}
 
 export const db = mysql.createPool(dbConfig);
 
