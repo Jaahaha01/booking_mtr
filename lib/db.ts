@@ -5,6 +5,9 @@ const dbConfig = {
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "",
   database: process.env.DB_NAME || "booking_db",
+  ssl: process.env.DB_SSL_CA ? {
+    ca: process.env.DB_SSL_CA
+  } : false,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
