@@ -1,8 +1,35 @@
-import { createClient } from '@libsql/client';
+import mysql from "mysql2/promise";
 
-const db = createClient({
-  url: process.env.TURSO_DATABASE_URL || "file:./booking.db",
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
+const dbConfig = {
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "booking_db",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  connectTimeout: 60000,
+};
 
-export { db };
+export const db = mysql.createPool(dbConfig);
+
+export async function testConnection() {
+  try {
+    const connection = await db.getConnection();
+    console.log('✅ Database connection successful');
+    connection.release();
+    return true;
+  } catch (error) {
+    console.error('❌ Database connection failed:', error);
+    return false;
+  }
+}
+
+export async function closeConnection() {
+  try {
+    await db.end();
+    console.log('✅ Database connection closed');
+  } catch (error) {
+    console.error('❌ Error closing database connection:', error);
+  }
+}

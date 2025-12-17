@@ -21,11 +21,11 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     }
 
     // ตรวจสอบสิทธิ์ admin หรือ staff
-    const result = await db.execute({
-      sql: "SELECT role FROM users WHERE user_id = ?",
-      args: [userId]
-    });
-    const user = result.rows[0];
+    const [userRows] = (await db.query(
+      "SELECT role FROM users WHERE user_id = ?",
+      [userId]
+    )) as any;
+    const user = userRows?.[0];
 
     if (!user || (user.role !== "admin" && user.role !== "staff")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -38,20 +38,20 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 
     // อัปเดตสถานะและ admin/staff ที่ยืนยันหรือยกเลิก
     if (status === "confirmed") {
-      await db.execute({
-        sql: "UPDATE bookings SET status = ?, confirmed_by = ? WHERE booking_id = ?",
-        args: [status, userId, bookingId]
-      });
+      await db.query(
+        "UPDATE bookings SET status = ?, confirmed_by = ? WHERE booking_id = ?",
+        [status, userId, bookingId]
+      );
     } else if (status === "cancelled") {
-      await db.execute({
-        sql: "UPDATE bookings SET status = ?, cancelled_by = ? WHERE booking_id = ?",
-        args: [status, userId, bookingId]
-      });
+      await db.query(
+        "UPDATE bookings SET status = ?, cancelled_by = ? WHERE booking_id = ?",
+        [status, userId, bookingId]
+      );
     } else if (status === "pending") {
-      await db.execute({
-        sql: "UPDATE bookings SET status = ?, confirmed_by = NULL, cancelled_by = NULL WHERE booking_id = ?",
-        args: [status, bookingId]
-      });
+      await db.query(
+        "UPDATE bookings SET status = ?, confirmed_by = NULL, cancelled_by = NULL WHERE booking_id = ?",
+        [status, bookingId]
+      );
     }
 
     return NextResponse.json({ success: true });
