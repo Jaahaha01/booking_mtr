@@ -1,9 +1,9 @@
-'use server';
-
 import { NextRequest, NextResponse } from "next/server";
 // TODO: Adjust the path below if your db file is elsewhere
 import { db } from "@/lib/db";
 import { cookies } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
 
 // GET - ดึงข้อมูลการจองเฉพาะ (await params version)
 export async function GET(

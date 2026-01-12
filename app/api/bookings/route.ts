@@ -1,8 +1,8 @@
-'use server';
-
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { cookies } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
 
 // GET - ดึงข้อมูลการจองทั้งหมด
 export async function GET() {
