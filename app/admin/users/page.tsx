@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AdminSidebar from '@/app/components/AdminSidebar';
+import Swal from 'sweetalert2';
 
 interface User {
   user_id: number;
@@ -122,11 +123,33 @@ export default function AdminUsersPage() {
     // ตรวจสอบว่าผู้ใช้ที่จะลบเป็น staff หรือ admin หรือไม่
     const targetUser = users.find(u => u.user_id === userId);
     if (targetUser && (targetUser.role === 'staff' || targetUser.role === 'admin')) {
-      setError('คุณไม่มีสิทธิ์ในการลบเจ้าหน้าที่หรือผู้ดูแลระบบ');
+      Swal.fire({
+        title: 'ไม่สามารถลบได้',
+        text: 'คุณไม่มีสิทธิ์ในการลบเจ้าหน้าที่หรือผู้ดูแลระบบ',
+        icon: 'error',
+        confirmButtonText: 'ปิด',
+        confirmButtonColor: '#dc2626',
+        width: '90%',
+        maxWidth: '500px'
+      });
       return;
     }
 
-    if (!confirm('คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?')) {
+    const result = await Swal.fire({
+      title: 'ยืนยันการลบ',
+      text: 'คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้? ไม่สามารถคืนค่าได้',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'ใช่, ลบเลย',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      width: '90%',
+      maxWidth: '500px',
+      reverseButtons: true
+    });
+
+    if (!result.isConfirmed) {
       return;
     }
 
@@ -412,19 +435,50 @@ export default function AdminUsersPage() {
                           <>
                                                       <button
                                                         onClick={() => {
-                                                          const message = `ข้อมูลผู้ใช้\n\n` +
-                                                            `ชื่อ-นามสกุล: ${userItem.fname || '-'} ${userItem.lname || '-'}\n` +
-                                                            `อีเมล: ${userItem.email || '-'}\n` +
-                                                            `เบอร์โทร: ${userItem.phone || '-'}\n` +
-                                                            `องค์กร: ${userItem.organization || '-'}\n` +
-                                                            `ที่อยู่: ${userItem.address || '-'}\n` +
-                                                            `หมายเลขบัตรประชาชน: ${userItem.identity_card || '-'}\n`;
-                                                          alert(message);
+                                                          const message = `<div class="text-left space-y-3">
+                                                            <div>
+                                                              <p class="font-semibold text-gray-700">ชื่อ-นามสกุล</p>
+                                                              <p class="text-gray-600">${userItem.fname || '-'} ${userItem.lname || '-'}</p>
+                                                            </div>
+                                                            <div>
+                                                              <p class="font-semibold text-gray-700">อีเมล</p>
+                                                              <p class="text-gray-600 break-all">${userItem.email || '-'}</p>
+                                                            </div>
+                                                            <div>
+                                                              <p class="font-semibold text-gray-700">เบอร์โทร</p>
+                                                              <p class="text-gray-600">${userItem.phone || '-'}</p>
+                                                            </div>
+                                                            <div>
+                                                              <p class="font-semibold text-gray-700">องค์กร</p>
+                                                              <p class="text-gray-600">${userItem.organization || '-'}</p>
+                                                            </div>
+                                                            <div>
+                                                              <p class="font-semibold text-gray-700">ที่อยู่</p>
+                                                              <p class="text-gray-600">${userItem.address || '-'}</p>
+                                                            </div>
+                                                            <div>
+                                                              <p class="font-semibold text-gray-700">หมายเลขบัตรประชาชน</p>
+                                                              <p class="text-gray-600">${userItem.identity_card || '-'}</p>
+                                                            </div>
+                                                          </div>`;
+                                                          Swal.fire({
+                                                            title: 'ข้อมูลยืนยันตัวตน',
+                                                            html: message,
+                                                            icon: 'info',
+                                                            confirmButtonText: 'ปิด',
+                                                            confirmButtonColor: '#7c3aed',
+                                                            width: '90%',
+                                                            maxWidth: '500px',
+                                                            customClass: {
+                                                              container: 'swal2-responsive',
+                                                              popup: 'rounded-2xl shadow-xl'
+                                                            }
+                                                          });
                                                         }}
-                                                        className="text-blue-600 hover:text-blue-900 transition-colors mr-3"
+                                                        className="text-purple-600 hover:text-purple-900 transition-colors mr-3 font-medium"
                                                         title="ดูข้อมูลผู้ใช้ทั้งหมด"
                                                       >
-                                                        ดูข้อมูลยืนยันตัวตน?
+                                                        ดูข้อมูล
                                                       </button>
                                                       <button
                                                         onClick={() => handleDeleteUser(userItem.user_id)}
