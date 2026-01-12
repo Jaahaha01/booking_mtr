@@ -1,22 +1,33 @@
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
 const dbConfig = {
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  // Single connection settings
-  connectionTimeoutMillis: 30000, // 30 seconds
-  query_timeout: 30000,
+  // Connection pool settings
+  max: 20, // Maximum number of clients
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
 };
 
-export const client = new Client(dbConfig);
+// Use connection pool instead of single client
+let pool: Pool | null = null;
 
-// Connect once
-client.connect().catch(console.error);
+function getPool() {
+  if (!pool) {
+    pool = new Pool(dbConfig);
+    
+    pool.on('error', (err) => {
+      console.error('Unexpected error on idle client', err);
+    });
+  }
+  return pool;
+}
 
 export const db = async (strings: TemplateStringsArray, ...values: any[]) => {
   try {
     const query = strings.reduce((acc, str, i) => acc + '$' + i + str).slice(0, -1);
-    const result = await client.query(query, values);
+    const pool = getPool();
+    const result = await pool.query(query, values);
     return result.rows;
   } catch (error) {
     console.error('Database query error:', error);
@@ -26,7 +37,8 @@ export const db = async (strings: TemplateStringsArray, ...values: any[]) => {
 
 export async function testConnection() {
   try {
-    await client.query('SELECT 1');
+    const pool = getPool();
+    await pool.query('SELECT 1');
     console.log('✅ Database connection successful');
     return true;
   } catch (error) {
@@ -37,8 +49,11 @@ export async function testConnection() {
 
 export async function closeConnection() {
   try {
-    await client.end();
-    console.log('✅ Database connection closed');
+    if (pool) {
+      await pool.end();
+      pool = null;
+      console.log('✅ Database connection closed');
+    }
   } catch (error) {
     console.error('❌ Error closing database connection:', error);
   }
