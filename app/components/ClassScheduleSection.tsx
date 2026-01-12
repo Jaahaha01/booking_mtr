@@ -77,7 +77,7 @@ export default function ClassScheduleSection() {
         <div className="text-center mb-8">
           <button
             onClick={toggleExpanded}
-            className="group inline-flex items-center gap-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+            className="group inline-flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white px-4 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
           >
             <svg 
               className={`w-6 h-6 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} 
@@ -95,7 +95,7 @@ export default function ClassScheduleSection() {
           
           {isExpanded && (
             <div className="mt-6 animate-fade-in">
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent mb-4">
+              <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent mb-4">
                 ตารางเรียนประจำสัปดาห์
               </h2>
             </div>
@@ -127,24 +127,24 @@ export default function ClassScheduleSection() {
 
             {/* Schedule Table */}
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-sky-100">
-              <div className="bg-gradient-to-r from-sky-500 to-blue-600 text-white p-4 sm:p-6">
-                <h3 className="text-xl sm:text-2xl font-bold">
+              <div className="bg-gradient-to-r from-sky-500 to-blue-600 text-white p-3 sm:p-6">
+                <h3 className="text-lg sm:text-2xl font-bold">
                   {(() => {
                     const r = allRooms.find(r => r.room_id === selectedRoom);
                     return r ? `${r.name} (${r.room_number})` : '-';
                   })()}
                 </h3>
-                <p className="text-sky-100 mt-1 text-sm sm:text-base">ตารางเวลาเรียนประจำสัปดาห์</p>
+                <p className="text-sky-100 mt-1 text-xs sm:text-base">ตารางเวลาเรียนประจำสัปดาห์</p>
               </div>
               
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs sm:text-sm">
                   <thead>
                     <tr className="border-b border-sky-100">
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700 bg-sky-50">วัน</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700 bg-sky-50">เริ่ม</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700 bg-sky-50">จบ</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700 bg-sky-50">วิชา</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-700 bg-sky-50">วัน</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-700 bg-sky-50">เริ่ม</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-700 bg-sky-50">จบ</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-700 bg-sky-50">วิชา</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -177,9 +177,9 @@ export default function ClassScheduleSection() {
                       if (daySchedules.length === 0) {
                         return (
                           <tr key={day} className={`border-b border-gray-100 ${dayIndex % 2 === 0 ? 'bg-white' : 'bg-gray-100'} hover:bg-sky-100 transition-colors duration-200`}>
-                            <td className="py-2 px-4 font-medium text-gray-900">{day}</td>
-                            <td className="py-2 px-4 text-gray-500" colSpan={3}>
-                              <span className="italic">ไม่มีการเรียนการสอน</span>
+                            <td className="py-2 px-2 sm:px-4 font-medium text-gray-900">{day}</td>
+                            <td className="py-2 px-2 sm:px-4 text-gray-500" colSpan={3}>
+                              <span className="italic">ไม่มี</span>
                             </td>
                           </tr>
                         );
@@ -190,17 +190,17 @@ export default function ClassScheduleSection() {
                           key={`${day}-${scheduleIndex}`} 
                           className={`border-b border-gray-100 ${dayIndex % 2 === 0 ? 'bg-white' : 'bg-gray-100'} hover:bg-sky-100 transition-colors duration-200`}
                         >
-                          <td className="py-2 px-4 font-medium text-gray-900">
+                          <td className="py-2 px-2 sm:px-4 font-medium text-gray-900">
                             {scheduleIndex === 0 ? day : ''}
                           </td>
-                          <td className="py-2 px-4 text-gray-700 font-medium">
+                          <td className="py-2 px-2 sm:px-4 text-gray-700 font-medium">
                             {formatTime(schedule.start_time)}
                           </td>
-                          <td className="py-2 px-4 text-gray-700 font-medium">
+                          <td className="py-2 px-2 sm:px-4 text-gray-700 font-medium">
                             {formatTime(schedule.end_time)}
                           </td>
-                          <td className="py-2 px-4">
-                            <span className="text-gray-900 font-medium">
+                          <td className="py-2 px-2 sm:px-4">
+                            <span className="text-gray-900 font-medium text-xs sm:text-sm">
                               {schedule.subject}
                             </span>
                           </td>
