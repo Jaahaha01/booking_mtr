@@ -3,10 +3,14 @@ import { Pool } from 'pg';
 const dbConfig = {
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  // Connection pool settings
-  max: 20, // Maximum number of clients
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
+  // Connection pool settings optimized for Vercel
+  max: 5, // Reduced from 20 for Vercel serverless
+  min: 0, // No persistent connections in serverless
+  idleTimeoutMillis: 15000, // Shorter idle timeout
+  connectionTimeoutMillis: 20000, // Increased timeout for slow networks
+  statement_timeout: 30000,
+  query_timeout: 30000,
+  application_name: 'booking_app_vercel',
 };
 
 // Use connection pool instead of single client
@@ -18,6 +22,10 @@ function getPool() {
     
     pool.on('error', (err) => {
       console.error('Unexpected error on idle client', err);
+    });
+
+    pool.on('connect', () => {
+      console.log('✅ Database pool connected');
     });
   }
   return pool;
