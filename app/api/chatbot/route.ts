@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-
+export const dynamic = 'force-dynamic';
 export async function GET() {
 	// ดึงข้อมูลห้องประชุมจาก API ห้องว่าง
 		const res = await fetch('http://localhost:3000/api/rooms/availability', {
