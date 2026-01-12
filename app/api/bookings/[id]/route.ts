@@ -1,3 +1,5 @@
+'use server';
+
 import { NextRequest, NextResponse } from "next/server";
 // TODO: Adjust the path below if your db file is elsewhere
 import { db } from "@/lib/db";
