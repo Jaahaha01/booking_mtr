@@ -42,16 +42,16 @@ export async function GET() {
 
     // 2) ดึงการจองที่ status = 'confirmed' ที่เวลาซ้อนกับปัจจุบัน (ห้องไม่ว่าง)
     const overlapped = await db`
-      SELECT room_id, title, start, end, status
+      SELECT room_id, title, start, "end", status
       FROM bookings
       WHERE status = 'confirmed'
         AND start <= NOW()
-        AND end > NOW()
+        AND "end" > NOW()
     `;
 
     // 3) ดึงการจองที่ status = 'confirmed' ทั้งหมด (สำหรับ currentBooking ในอนาคตด้วย)
     const allConfirmed = await db`
-      SELECT room_id, title, start, end, status
+      SELECT room_id, title, start, "end", status
       FROM bookings
       WHERE status = 'confirmed'
     `;

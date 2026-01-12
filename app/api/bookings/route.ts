@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     // Auto-reject booking ที่ pending และหมดเวลา (end < NOW())
     await db`
       UPDATE bookings SET status = 'cancelled', cancelled_by = ${userId}, notes = CONCAT(COALESCE(notes, ''), '\n[Auto-cancelled: หมดเวลาจอง]')
-      WHERE user_id = ${userId} AND status = 'pending' AND end < NOW()
+      WHERE user_id = ${userId} AND status = 'pending' AND "end" < NOW()
     `;
     // ป้องกัน user_id = 0
     if (!userId || userId === '0') {
@@ -143,9 +143,9 @@ export async function POST(req: NextRequest) {
       WHERE user_id = ${userId} AND room_id = ${room_id}
         AND status IN ('pending', 'confirmed')
         AND (
-          (start < ${end} AND end > ${start}) OR
-          (start < ${start} AND end > ${end}) OR
-          (start >= ${start} AND end <= ${end})
+          (start < ${end} AND "end" > ${start}) OR
+          (start < ${start} AND "end" > ${end}) OR
+          (start >= ${start} AND "end" <= ${end})
         )
     `;
 
@@ -163,9 +163,9 @@ export async function POST(req: NextRequest) {
       WHERE room_id = ${room_id}
         AND status IN ('pending', 'confirmed')
         AND (
-          (start < ${end} AND end > ${start}) OR
-          (start < ${start} AND end > ${end}) OR
-          (start >= ${start} AND end <= ${end})
+          (start < ${end} AND "end" > ${start}) OR
+          (start < ${start} AND "end" > ${end}) OR
+          (start >= ${start} AND "end" <= ${end})
         )
     `;
 
@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
 
     // สร้างการจองใหม่ (สถานะ pending)
     const result = await db`
-      INSERT INTO bookings (title, room_id, user_id, start, end, status, attendees, notes)
+      INSERT INTO bookings (title, room_id, user_id, start, "end", status, attendees, notes)
       VALUES (${title}, ${room_id}, ${userId}, ${start}, ${end}, 'pending', ${attendees}, ${notes})
       RETURNING booking_id
     `;

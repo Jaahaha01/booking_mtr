@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 
 const dbConfig = {
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
   // Connection pool settings optimized for Vercel
   max: 5, // Reduced from 20 for Vercel serverless
   min: 0, // No persistent connections in serverless
@@ -33,7 +33,16 @@ function getPool() {
 
 export const db = async (strings: TemplateStringsArray, ...values: any[]) => {
   try {
-    const query = strings.reduce((acc, str, i) => acc + '$' + i + str).slice(0, -1);
+    // Build parameterized query: combine template strings with $1, $2, $3, etc.
+    // Example: `SELECT * FROM users WHERE id = ${id}` becomes
+    // strings = ["SELECT * FROM users WHERE id = ", ""]
+    // values = [123]
+    // result = "SELECT * FROM users WHERE id = $1"
+    let query = strings[0];
+    for (let i = 0; i < values.length; i++) {
+      query += '$' + (i + 1) + strings[i + 1];
+    }
+    
     const pool = getPool();
     const result = await pool.query(query, values);
     return result.rows;
