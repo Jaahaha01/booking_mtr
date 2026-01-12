@@ -25,7 +25,7 @@ type BookingRow = {
 export async function GET() {
   try {
     // 1) ห้องที่ active ทั้งหมด
-    const [rooms]: any = await db.query(`
+    const rooms = await db`
       SELECT 
         room_id, 
         name, 
@@ -38,40 +38,40 @@ export async function GET() {
       FROM rooms 
       WHERE status = 'active'
       ORDER BY name ASC
-    `);
+    `;
 
     // 2) ดึงการจองที่ status = 'confirmed' ที่เวลาซ้อนกับปัจจุบัน (ห้องไม่ว่าง)
-    const [overlapped]: any = await db.query(`
+    const overlapped = await db`
       SELECT room_id, title, start, end, status
       FROM bookings
       WHERE status = 'confirmed'
         AND start <= NOW()
         AND end > NOW()
-    `);
+    `;
 
     // 3) ดึงการจองที่ status = 'confirmed' ทั้งหมด (สำหรับ currentBooking ในอนาคตด้วย)
-    const [allConfirmed]: any = await db.query(`
+    const allConfirmed = await db`
       SELECT room_id, title, start, end, status
       FROM bookings
       WHERE status = 'confirmed'
-    `);
+    `;
 
     // ทำแผนที่ room_id -> booking ปัจจุบัน (ห้องไม่ว่าง)
     const currentMap = new Map<number, BookingRow>();
-    (overlapped as BookingRow[]).forEach(b => {
-      if (!currentMap.has(b.room_id)) currentMap.set(b.room_id, b);
+    overlapped.forEach((b: any) => {
+      if (!currentMap.has(b.room_id)) currentMap.set(b.room_id, b as BookingRow);
     });
 
     // ทำแผนที่ room_id -> booking confirmed ล่าสุด (สำหรับ currentBooking)
     const confirmedMap = new Map<number, BookingRow>();
-    (allConfirmed as BookingRow[]).forEach(b => {
+    allConfirmed.forEach((b: any) => {
       // ถ้าไม่มี หรืออันนี้ใหม่กว่า ให้ใช้
       const prev = confirmedMap.get(b.room_id);
-      if (!prev || new Date(b.start) > new Date(prev.start)) confirmedMap.set(b.room_id, b);
+      if (!prev || new Date(b.start) > new Date(prev.start)) confirmedMap.set(b.room_id, b as BookingRow);
     });
 
     // 4) จัดรูปข้อมูลให้ตรงกับหน้าตา UI (availability เป็น 'ว่าง' | 'ไม่ว่าง' + currentBooking เฉพาะ confirmed)
-    const uiRooms = (rooms as RoomRow[]).map(r => {
+    const uiRooms = rooms.map(r => {
       const cur = currentMap.get(r.room_id);
       const lastConfirmed = confirmedMap.get(r.room_id);
       return {

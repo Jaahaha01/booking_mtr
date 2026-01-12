@@ -14,25 +14,25 @@ export async function GET() {
       );
     }
 
-    const [rows]: any = await db.query(`
-      SELECT 
-        b.booking_id, 
-        b.title, 
-        b.start, 
-        b.end, 
+    const rows = await db`
+      SELECT
+        b.booking_id,
+        b.title,
+        b.start,
+        b.end,
         b.status,
         b.attendees,
         b.notes,
         b.created_at,
         r.name as room_name,
         r.capacity as room_capacity,
-        (SELECT CONCAT(u2.fname, ' ', u2.lname) FROM users u2 WHERE u2.user_id = b.confirmed_by) as confirmed_name,
-        (SELECT CONCAT(u3.fname, ' ', u3.lname) FROM users u3 WHERE u3.user_id = b.cancelled_by) as cancelled_name
+        (SELECT u2.fname || ' ' || u2.lname FROM users u2 WHERE u2.user_id = b.confirmed_by) as confirmed_name,
+        (SELECT u3.fname || ' ' || u3.lname FROM users u3 WHERE u3.user_id = b.cancelled_by) as cancelled_name
       FROM bookings b
       JOIN rooms r ON b.room_id = r.room_id
-      WHERE b.user_id = ?
+      WHERE b.user_id = ${userId}
       ORDER BY b.created_at DESC
-    `, [userId]);
+    `;
 
     return NextResponse.json(rows);
   } catch (error) {

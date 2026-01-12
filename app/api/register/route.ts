@@ -48,10 +48,7 @@ export async function POST(req: Request) {
 
   try {
     // เช็ก username หรือ email ซ้ำ
-    const [check]: any = await db.query(
-      "SELECT * FROM users WHERE username = ? OR email = ?",
-      [username, email]
-    );
+    const check = await db`SELECT * FROM users WHERE username = ${username} OR email = ${email}`;
     
     if (check.length > 0) {
       return NextResponse.json(
@@ -64,19 +61,9 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // เพิ่มข้อมูลลงฐานข้อมูล โดยยังไม่ยืนยันตัวตน
-    await db.query(
-      `INSERT INTO users 
+    await db`INSERT INTO users 
       (username, password, email, phone, fname, lname, role)
-      VALUES (?, ?, ?, ?, ?, ?, 'user')`,
-      [
-        username,
-        hashedPassword,
-        email,
-        phone,
-        fname,
-        lname
-      ]
-    );
+      VALUES (${username}, ${hashedPassword}, ${email}, ${phone}, ${fname}, ${lname}, 'user')`;
 
     return NextResponse.json({ 
       message: "สมัครสมาชิกเรียบร้อย กรุณายืนยันตัวตนเพื่อเริ่มใช้งาน" 

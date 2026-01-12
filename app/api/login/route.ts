@@ -7,10 +7,7 @@ export async function POST(req: Request) {
   const { username, password } = await req.json();
 
   // 1. ดึงข้อมูลผู้ใช้จากฐานข้อมูล
-  const [rows]: any = await db.query(
-    "SELECT * FROM users WHERE username = ?",
-    [username]
-  );
+  const rows = await db`SELECT * FROM users WHERE username = ${username}`;
 
   const user = rows[0];
 

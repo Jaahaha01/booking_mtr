@@ -16,10 +16,7 @@ export async function PUT(
 
   try {
     // ตรวจสอบสิทธิ์ admin หรือ staff
-    const [adminRows] = await db.query(
-      'SELECT role FROM users WHERE user_id = ?',
-      [adminId]
-    ) as any;
+    const adminRows = await db`SELECT role FROM users WHERE user_id = ${adminId}`;
     const admin = adminRows?.[0];
     if (!admin || (admin.role !== 'admin' && admin.role !== 'staff')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -29,26 +26,21 @@ export async function PUT(
     const { role, verification_status } = body;
 
     // อัปเดตข้อมูลผู้ใช้
-    const updateFields: string[] = [];
-    const updateValues: any[] = [];
-
-    if (role !== undefined) {
-      updateFields.push('role = ?');
-      updateValues.push(role);
-    }
-
-    if (verification_status !== undefined) {
-      updateFields.push('verification_status = ?');
-      updateValues.push(verification_status);
-    }
-
-    if (updateFields.length === 0) {
+    if (role !== undefined && verification_status !== undefined) {
+      await db`
+        UPDATE users SET role = ${role}, verification_status = ${verification_status}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ${userId}
+      `;
+    } else if (role !== undefined) {
+      await db`
+        UPDATE users SET role = ${role}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ${userId}
+      `;
+    } else if (verification_status !== undefined) {
+      await db`
+        UPDATE users SET verification_status = ${verification_status}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ${userId}
+      `;
+    } else {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
     }
-
-    const updateSql = `UPDATE users SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?`;
-    updateValues.push(userId);
-    await db.query(updateSql, updateValues);
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -69,10 +61,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   try {
-    const [adminRows] = await db.query(
-      'SELECT role FROM users WHERE user_id = ?',
-      [adminId]
-    ) as any;
+    const adminRows = await db`SELECT role FROM users WHERE user_id = ${adminId}`;
     const admin = adminRows?.[0];
     if (!admin || (admin.role !== 'admin' && admin.role !== 'staff')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -84,9 +73,9 @@ export async function DELETE(
     }
 
     // ลบการจองทั้งหมดของผู้ใช้ก่อน
-    await db.query('DELETE FROM bookings WHERE user_id = ?', [userId]);
+    await db`DELETE FROM bookings WHERE user_id = ${userId}`;
     // ลบผู้ใช้
-    await db.query('DELETE FROM users WHERE user_id = ?', [userId]);
+    await db`DELETE FROM users WHERE user_id = ${userId}`;
 
     return NextResponse.json({ success: true });
   } catch (error) {

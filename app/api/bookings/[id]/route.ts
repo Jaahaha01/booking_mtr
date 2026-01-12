@@ -11,13 +11,12 @@ export async function GET(
   try {
     const { id } = await params;
     const bookingId = parseInt(id);
-    const [rows]: any = await db.query(
-      `
-      SELECT 
-        b.booking_id, 
-        b.title, 
-        b.start, 
-        b.end, 
+    const rows = await db`
+      SELECT
+        b.booking_id,
+        b.title,
+        b.start,
+        b.end,
         b.status,
         b.attendees,
         b.notes,
@@ -26,20 +25,18 @@ export async function GET(
         r.room_id as room_id,
         r.name as room_name,
         r.capacity,
-  u.user_id as user_id,
+        u.user_id as user_id,
         u.username,
         u.fname,
         u.lname,
         u.email,
-  (SELECT CONCAT(u2.fname, ' ', u2.lname) FROM users u2 WHERE u2.user_id = b.confirmed_by) as confirmed_name,
-  (SELECT CONCAT(u3.fname, ' ', u3.lname) FROM users u3 WHERE u3.user_id = b.cancelled_by) as cancelled_name
+        (SELECT u2.fname || ' ' || u2.lname FROM users u2 WHERE u2.user_id = b.confirmed_by) as confirmed_name,
+        (SELECT u3.fname || ' ' || u3.lname FROM users u3 WHERE u3.user_id = b.cancelled_by) as cancelled_name
       FROM bookings b
       JOIN rooms r ON b.room_id = r.room_id
-  JOIN users u ON b.user_id = u.user_id
-      WHERE b.booking_id = ?
-    `,
-      [bookingId]
-    );
+      JOIN users u ON b.user_id = u.user_id
+      WHERE b.booking_id = ${bookingId}
+    `;
 
     if (rows.length === 0) {
       return NextResponse.json(
@@ -68,10 +65,9 @@ export async function PUT(
     const bookingId = parseInt(id);
     const body = await req.json();
     const { title, attendees, notes } = body;
-    await db.query(
-      'UPDATE bookings SET title = ?, attendees = ?, notes = ? WHERE booking_id = ?',
-      [title, attendees, notes, bookingId]
-    );
+    await db`
+      UPDATE bookings SET title = ${title}, attendees = ${attendees}, notes = ${notes} WHERE booking_id = ${bookingId}
+    `;
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating booking:', error);
@@ -90,7 +86,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const bookingId = parseInt(id);
-  await db.query('DELETE FROM bookings WHERE booking_id = ?', [bookingId]);
+  await db`DELETE FROM bookings WHERE booking_id = ${bookingId}`;
     return NextResponse.json({ message: 'ลบการจองสำเร็จ' });
   } catch (error) {
     console.error('Error deleting booking:', error);

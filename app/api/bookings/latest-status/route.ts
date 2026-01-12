@@ -11,10 +11,9 @@ export async function GET() {
     }
 
     // ดึง booking ล่าสุดของ user ที่ status เป็น confirmed หรือ cancelled
-    const [rows]: any = await db.query(
-      `SELECT booking_id, status, title, created_at FROM bookings WHERE user_id = ? AND status IN ('confirmed', 'cancelled') ORDER BY created_at DESC LIMIT 1`,
-      [userId]
-    );
+    const rows = await db`
+      SELECT booking_id, status, title, created_at FROM bookings WHERE user_id = ${userId} AND status IN ('confirmed', 'cancelled') ORDER BY created_at DESC LIMIT 1
+    `;
     if (!rows || rows.length === 0) {
       return NextResponse.json({ latest: null });
     }

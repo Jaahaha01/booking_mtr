@@ -12,7 +12,7 @@ export async function GET() {
 
   try {
     // ตรวจสอบสิทธิ์ admin หรือ staff
-    const [userRows]: any = await db.query('SELECT role FROM users WHERE user_id = ?', [userId]);
+    const userRows = await db`SELECT role FROM users WHERE user_id = ${userId}`;
     const user = userRows?.[0];
     if (!user || (user.role !== 'admin' && user.role !== 'staff')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -27,24 +27,24 @@ export async function GET() {
       approvedUsersResult,
       pendingBookingsResult,
       confirmedBookingsResult
-    ]: any = await Promise.all([
-      db.query('SELECT COUNT(*) as count FROM users'),
-      db.query('SELECT COUNT(*) as count FROM bookings'),
-      db.query('SELECT COUNT(*) as count FROM rooms'),
-      db.query('SELECT COUNT(*) as count FROM users WHERE verification_status = "pending"'),
-      db.query('SELECT COUNT(*) as count FROM users WHERE verification_status = "approved"'),
-      db.query('SELECT COUNT(*) as count FROM bookings WHERE status = "pending"'),
-      db.query('SELECT COUNT(*) as count FROM bookings WHERE status = "confirmed"')
+    ] = await Promise.all([
+      db`SELECT COUNT(*) as count FROM users`,
+      db`SELECT COUNT(*) as count FROM bookings`,
+      db`SELECT COUNT(*) as count FROM rooms`,
+      db`SELECT COUNT(*) as count FROM users WHERE verification_status = 'pending'`,
+      db`SELECT COUNT(*) as count FROM users WHERE verification_status = 'approved'`,
+      db`SELECT COUNT(*) as count FROM bookings WHERE status = 'pending'`,
+      db`SELECT COUNT(*) as count FROM bookings WHERE status = 'confirmed'`
     ]);
 
     const stats = {
-      totalUsers: totalUsersResult[0][0].count,
-      totalBookings: totalBookingsResult[0][0].count,
-      totalRooms: totalRoomsResult[0][0].count,
-      pendingVerifications: pendingVerificationsResult[0][0].count,
-      approvedUsers: approvedUsersResult[0][0].count,
-      pendingBookings: pendingBookingsResult[0][0].count,
-      confirmedBookings: confirmedBookingsResult[0][0].count
+      totalUsers: totalUsersResult[0].count,
+      totalBookings: totalBookingsResult[0].count,
+      totalRooms: totalRoomsResult[0].count,
+      pendingVerifications: pendingVerificationsResult[0].count,
+      approvedUsers: approvedUsersResult[0].count,
+      pendingBookings: pendingBookingsResult[0].count,
+      confirmedBookings: confirmedBookingsResult[0].count
     };
 
     return NextResponse.json(stats);

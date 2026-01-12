@@ -27,10 +27,7 @@ export async function PUT(
     }
 
     // ✅ ตรวจสอบ role
-    const [userRows]: any = await db.query(
-      "SELECT role FROM users WHERE user_id = ?",
-      [userId]
-    );
+    const userRows = await db`SELECT role FROM users WHERE user_id = ${userId}`;
     const user = userRows?.[0];
     if (!user || (user.role !== "admin" && user.role !== "staff")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -48,10 +45,9 @@ export async function PUT(
     }
 
     // ✅ ตรวจสอบชื่อ/เลขห้องซ้ำ (ยกเว้นห้องเดิม)
-    const [existingRoom]: any = await db.query(
-      "SELECT room_id FROM rooms WHERE (name = ? OR room_number = ?) AND room_id != ?",
-      [name, room_number, roomId]
-    );
+    const existingRoom = await db`
+      SELECT room_id FROM rooms WHERE (name = ${name} OR room_number = ${room_number}) AND room_id != ${roomId}
+    `;
 
     if (existingRoom.length > 0) {
       return NextResponse.json(
@@ -61,14 +57,11 @@ export async function PUT(
     }
 
     // ✅ อัปเดตข้อมูลห้อง
-    await db.query(
-      `
-      UPDATE rooms 
-      SET name = ?, room_number = ?, capacity = ?, description = ?, updated_at = NOW()
-      WHERE room_id = ?
-      `,
-      [name, room_number, capacity, description, roomId]
-    );
+    await db`
+      UPDATE rooms
+      SET name = ${name}, room_number = ${room_number}, capacity = ${capacity}, description = ${description}, updated_at = NOW()
+      WHERE room_id = ${roomId}
+    `;
 
     return NextResponse.json({ message: "อัปเดตห้องประชุมสำเร็จ" });
   } catch (error) {
@@ -105,20 +98,16 @@ export async function DELETE(
     }
 
     // ✅ ตรวจสอบ role
-    const [userRows]: any = await db.query(
-      "SELECT role FROM users WHERE user_id = ?",
-      [userId]
-    );
+    const userRows = await db`SELECT role FROM users WHERE user_id = ${userId}`;
     const user = userRows?.[0];
     if (!user || (user.role !== "admin" && user.role !== "staff")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // ✅ ตรวจสอบว่ามีการจองที่เกี่ยวข้องอยู่หรือไม่
-    const [bookings]: any = await db.query(
-      'SELECT booking_id FROM bookings WHERE room_id = ? AND status != "cancelled"',
-      [roomId]
-    );
+    const bookings = await db`
+      SELECT booking_id FROM bookings WHERE room_id = ${roomId} AND status != 'cancelled'
+    `;
 
     if (bookings.length > 0) {
       return NextResponse.json(
@@ -128,7 +117,7 @@ export async function DELETE(
     }
 
     // ✅ ลบห้องประชุม
-    await db.query("DELETE FROM rooms WHERE room_id = ?", [roomId]);
+    await db`DELETE FROM rooms WHERE room_id = ${roomId}`;
 
     return NextResponse.json({ message: "ลบห้องประชุมสำเร็จ" });
   } catch (error) {

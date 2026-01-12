@@ -5,12 +5,12 @@ import { cookies } from 'next/headers';
 // GET - ดึงข้อมูลการจองทั้งหมด
 export async function GET() {
   try {
-    const [rows]: any = await db.query(`
-      SELECT 
-        b.booking_id, 
-        b.title, 
-        b.start, 
-        b.end, 
+    const rows = await db`
+      SELECT
+        b.booking_id,
+        b.title,
+        b.start,
+        b.end,
         b.status,
         b.attendees,
         b.notes,
@@ -32,7 +32,7 @@ export async function GET() {
       LEFT JOIN users uc ON b.confirmed_by = uc.user_id
       LEFT JOIN users ucan ON b.cancelled_by = ucan.user_id
       ORDER BY b.start ASC
-    `);
+    `;
 
     const events = rows.map((b: any) => ({
   booking_id: b.booking_id,
@@ -80,10 +80,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Auto-reject booking ที่ pending และหมดเวลา (end < NOW())
-    await db.query(`
-      UPDATE bookings SET status = 'cancelled', cancelled_by = ?, notes = CONCAT(IFNULL(notes, ''), '\n[Auto-cancelled: หมดเวลาจอง]')
-      WHERE user_id = ? AND status = 'pending' AND end < NOW()
-    `, [userId, userId]);
+    await db`
+      UPDATE bookings SET status = 'cancelled', cancelled_by = ${userId}, notes = CONCAT(COALESCE(notes, ''), '\n[Auto-cancelled: หมดเวลาจอง]')
+      WHERE user_id = ${userId} AND status = 'pending' AND end < NOW()
+    `;
     // ป้องกัน user_id = 0
     if (!userId || userId === '0') {
       return NextResponse.json(
@@ -123,10 +123,9 @@ export async function POST(req: NextRequest) {
     }
 
     // ตรวจสอบว่าผู้ใช้ยืนยันตัวตนแล้วหรือไม่
-    const [userData]: any = await db.query(
-  'SELECT verification_status FROM users WHERE user_id = ?',
-  [userId]
-    );
+    const userData = await db`
+      SELECT verification_status FROM users WHERE user_id = ${userId}
+    `;
 
     if (userData[0]?.verification_status !== 'approved') {
       return NextResponse.json(
@@ -137,16 +136,16 @@ export async function POST(req: NextRequest) {
 
 
     // ตรวจสอบว่าผู้ใช้จองห้องนี้ในช่วงเวลาซ้อนทับหรือไม่ (pending/confirmed เท่านั้น)
-    const [overlapBookings]: any = await db.query(`
-      SELECT booking_id, status FROM bookings 
-      WHERE user_id = ? AND room_id = ? 
+    const overlapBookings = await db`
+      SELECT booking_id, status FROM bookings
+      WHERE user_id = ${userId} AND room_id = ${room_id}
         AND status IN ('pending', 'confirmed')
         AND (
-          (start < ? AND end > ?) OR
-          (start < ? AND end > ?) OR
-          (start >= ? AND end <= ?)
+          (start < ${end} AND end > ${start}) OR
+          (start < ${start} AND end > ${end}) OR
+          (start >= ${start} AND end <= ${end})
         )
-    `, [userId, room_id, end, start, start, end, start, end]);
+    `;
 
     if (overlapBookings.length > 0) {
       return NextResponse.json(
@@ -157,16 +156,16 @@ export async function POST(req: NextRequest) {
 
 
     // ตรวจสอบว่าห้องว่างในช่วงเวลาที่ต้องการจองหรือไม่ (pending หรือ confirmed ห้ามจองซ้ำ)
-    const [conflictingBookings]: any = await db.query(`
-      SELECT booking_id FROM bookings 
-      WHERE room_id = ? 
+    const conflictingBookings = await db`
+      SELECT booking_id FROM bookings
+      WHERE room_id = ${room_id}
         AND status IN ('pending', 'confirmed')
         AND (
-          (start < ? AND end > ?) OR
-          (start < ? AND end > ?) OR
-          (start >= ? AND end <= ?)
+          (start < ${end} AND end > ${start}) OR
+          (start < ${start} AND end > ${end}) OR
+          (start >= ${start} AND end <= ${end})
         )
-    `, [room_id, end, start, start, end, start, end]);
+    `;
 
     if (conflictingBookings.length > 0) {
       return NextResponse.json(
@@ -188,13 +187,13 @@ export async function POST(req: NextRequest) {
     console.log('DEBUG schedule overlap check:', { bookingDay, bookingStartTime, bookingEndTime });
 
     // ตรวจสอบกับ room_schedules (logic ทับซ้อนแบบเดียวกับ booking)
-    const [conflictingSchedules]: any = await db.query(`
+    const conflictingSchedules = await db`
       SELECT * FROM room_schedules
-      WHERE room_id = ? AND day_of_week = ?
+      WHERE room_id = ${room_id} AND day_of_week = ${bookingDate.getDay()}
         AND (
-          start_time < ? AND end_time > ?
+          start_time < ${bookingEndTime} AND end_time > ${bookingStartTime}
         )
-    `, [room_id, bookingDay, bookingEndTime, bookingStartTime]);
+    `;
 
     if (conflictingSchedules.length > 0) {
       return NextResponse.json(
@@ -204,18 +203,19 @@ export async function POST(req: NextRequest) {
     }
 
     // สร้างการจองใหม่ (สถานะ pending)
-    const [result]: any = await db.query(`
+    const result = await db`
       INSERT INTO bookings (title, room_id, user_id, start, end, status, attendees, notes)
-      VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)
-    `, [title, room_id, userId, start, end, attendees, notes]);
+      VALUES (${title}, ${room_id}, ${userId}, ${start}, ${end}, 'pending', ${attendees}, ${notes})
+      RETURNING booking_id
+    `;
 
     // ดึงข้อมูลการจองที่เพิ่งสร้าง
-    const [newBooking]: any = await db.query(`
-      SELECT 
-        b.booking_id, 
-        b.title, 
-        b.start, 
-        b.end, 
+    const newBooking = await db`
+      SELECT
+        b.booking_id,
+        b.title,
+        b.start,
+        b.end,
         b.status,
         b.attendees,
         b.notes,
@@ -227,8 +227,8 @@ export async function POST(req: NextRequest) {
       FROM bookings b
       JOIN rooms r ON b.room_id = r.room_id
       JOIN users u ON b.user_id = u.user_id
-      WHERE b.booking_id = ?
-    `, [result.insertId]);
+      WHERE b.booking_id = ${result[0].booking_id}
+    `;
 
     return NextResponse.json({
       message: 'ส่งคำขอจองห้องประชุมสำเร็จ กรุณารอการอนุมัติจากเจ้าหน้าที่',

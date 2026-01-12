@@ -14,128 +14,123 @@ export async function GET(request: NextRequest) {
   const currentMonth = monthParam ? parseInt(monthParam) : now.getMonth() + 1;
   const currentYear = yearParam ? parseInt(yearParam) : now.getFullYear();
     
-  // Query 1: Most booked rooms (all time)
-    const mostBookedQuery = `
-      SELECT 
-  r.room_id,
-        r.name,
-        r.capacity,
-  COUNT(b.booking_id) as booking_count,
-        COUNT(DISTINCT b.user_id) as unique_users,
-        AVG(TIMESTAMPDIFF(HOUR, b.start, b.end)) as avg_duration_hours,
-        SUM(TIMESTAMPDIFF(HOUR, b.start, b.end)) as total_hours
-    FROM rooms r
-  LEFT JOIN bookings b ON r.room_id = b.room_id AND b.status = 'confirmed'
-  GROUP BY r.room_id, r.name, r.capacity
-      ORDER BY booking_count DESC
-    `;
-    
-  // Query 2: Most booked rooms this month
-    // Query 2.1: Most booked rooms this week
+  // Calculate date variables
     const weekStart = new Date(now);
     weekStart.setDate(now.getDate() - now.getDay()); // วันอาทิตย์แรกของสัปดาห์นี้
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6); // วันเสาร์สุดท้ายของสัปดาห์นี้
     const weekStartStr = weekStart.toISOString().slice(0, 10);
     const weekEndStr = weekEnd.toISOString().slice(0, 10);
-    const weeklyBookedQuery = `
-      SELECT 
-        r.room_id,
-        r.name,
-        r.capacity,
-        COUNT(b.booking_id) as booking_count,
-        COUNT(DISTINCT b.user_id) as unique_users,
-        SUM(TIMESTAMPDIFF(HOUR, b.start, b.end)) as total_hours
-      FROM rooms r
-      LEFT JOIN bookings b ON r.room_id = b.room_id 
-        AND DATE(b.start) BETWEEN ? AND ? AND b.status = 'confirmed'
-      GROUP BY r.room_id, r.name, r.capacity
-      ORDER BY booking_count DESC
-    `;
-
-    // Query 2.2: Most booked rooms today
     const todayStr = now.toISOString().slice(0, 10);
-    const dailyBookedQuery = `
-      SELECT 
-        r.room_id,
+    
+  // Execute all queries
+  const mostBookedRows = await db`
+SELECT 
+  r.room_id,
         r.name,
         r.capacity,
-        COUNT(b.booking_id) as booking_count,
+  COUNT(b.booking_id) as booking_count,
         COUNT(DISTINCT b.user_id) as unique_users,
-        SUM(TIMESTAMPDIFF(HOUR, b.start, b.end)) as total_hours
-      FROM rooms r
-      LEFT JOIN bookings b ON r.room_id = b.room_id 
-        AND DATE(b.start) = ? AND b.status = 'confirmed'
-      GROUP BY r.room_id, r.name, r.capacity
+        AVG(EXTRACT(EPOCH FROM (b.end - b.start))/3600) as avg_duration_hours,
+        SUM(EXTRACT(EPOCH FROM (b.end - b.start))/3600) as total_hours
+    FROM rooms r
+  LEFT JOIN bookings b ON r.room_id = b.room_id AND b.status = 'confirmed'
+  GROUP BY r.room_id, r.name, r.capacity
       ORDER BY booking_count DESC
-    `;
-    const monthlyBookedQuery = `
+`;
+    
+  const monthlyBookedRows = await db`
       SELECT 
   r.room_id,
         r.name,
         r.capacity,
   COUNT(b.booking_id) as booking_count,
         COUNT(DISTINCT b.user_id) as unique_users,
-        AVG(TIMESTAMPDIFF(HOUR, b.start, b.end)) as avg_duration_hours,
-        SUM(TIMESTAMPDIFF(HOUR, b.start, b.end)) as total_hours
+        AVG(EXTRACT(EPOCH FROM (b.end - b.start))/3600) as avg_duration_hours,
+        SUM(EXTRACT(EPOCH FROM (b.end - b.start))/3600) as total_hours
       FROM rooms r
   LEFT JOIN bookings b ON r.room_id = b.room_id 
-    AND MONTH(b.start) = ? 
-    AND YEAR(b.start) = ?
+    AND EXTRACT(MONTH FROM b.start) = ${currentMonth} 
+    AND EXTRACT(YEAR FROM b.start) = ${currentYear}
     AND b.status = 'confirmed'
   GROUP BY r.room_id, r.name, r.capacity
       ORDER BY booking_count DESC
-    `;
+`;
     
-    // Query 3: Booking trends by day of week
-    const dayOfWeekQuery = `
+  const weeklyBookedRows = await db`
       SELECT 
-        DAYNAME(b.start) as day_name,
+        r.room_id,
+        r.name,
+        r.capacity,
+        COUNT(b.booking_id) as booking_count,
+        COUNT(DISTINCT b.user_id) as unique_users,
+        SUM(EXTRACT(EPOCH FROM (b.end - b.start))/3600) as total_hours
+      FROM rooms r
+      LEFT JOIN bookings b ON r.room_id = b.room_id 
+        AND b.start::date BETWEEN ${weekStartStr} AND ${weekEndStr} AND b.status = 'confirmed'
+      GROUP BY r.room_id, r.name, r.capacity
+      ORDER BY booking_count DESC
+`;
+
+    const dailyBookedRows = await db`
+      SELECT 
+        r.room_id,
+        r.name,
+        r.capacity,
+        COUNT(b.booking_id) as booking_count,
+        COUNT(DISTINCT b.user_id) as unique_users,
+        SUM(EXTRACT(EPOCH FROM (b.end - b.start))/3600) as total_hours
+      FROM rooms r
+      LEFT JOIN bookings b ON r.room_id = b.room_id 
+        AND b.start::date = ${todayStr} AND b.status = 'confirmed'
+      GROUP BY r.room_id, r.name, r.capacity
+      ORDER BY booking_count DESC
+`;
+    const dayOfWeekRows = await db`
+      SELECT 
+        to_char(b.start, 'Day') as day_name,
         COUNT(*) as booking_count,
-        AVG(TIMESTAMPDIFF(HOUR, b.start, b.end)) as avg_duration_hours
+        AVG(EXTRACT(EPOCH FROM (b.end - b.start))/3600) as avg_duration_hours
       FROM bookings b
-      WHERE MONTH(b.start) = ? AND YEAR(b.start) = ? AND b.status = 'confirmed'
-      GROUP BY DAYNAME(b.start)
-      ORDER BY FIELD(DAYNAME(b.start), 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
-    `;
+      WHERE EXTRACT(MONTH FROM b.start) = ${currentMonth} AND EXTRACT(YEAR FROM b.start) = ${currentYear} AND b.status = 'confirmed'
+      GROUP BY to_char(b.start, 'Day')
+      ORDER BY CASE to_char(b.start, 'Day')
+        WHEN 'Monday   ' THEN 1
+        WHEN 'Tuesday  ' THEN 2
+        WHEN 'Wednesday' THEN 3
+        WHEN 'Thursday ' THEN 4
+        WHEN 'Friday   ' THEN 5
+        WHEN 'Saturday ' THEN 6
+        WHEN 'Sunday   ' THEN 7
+      END
+`;
     
-    // Query 4: Peak hours analysis
-    const peakHoursQuery = `
+    const peakHoursRows = await db`
       SELECT 
-        HOUR(b.start) as hour,
+        EXTRACT(HOUR FROM b.start) as hour,
         COUNT(*) as booking_count,
         COUNT(DISTINCT b.room_id) as rooms_used
       FROM bookings b
-      WHERE MONTH(b.start) = ? AND YEAR(b.start) = ? AND b.status = 'confirmed'
-      GROUP BY HOUR(b.start)
+      WHERE EXTRACT(MONTH FROM b.start) = ${currentMonth} AND EXTRACT(YEAR FROM b.start) = ${currentYear} AND b.status = 'confirmed'
+      GROUP BY EXTRACT(HOUR FROM b.start)
       ORDER BY hour
-    `;
+`;
     
-    // Query 5: Recent bookings (last 7 days)
-    const recentBookingsQuery = `
+    const recentBookingsRows = await db`
       SELECT 
         r.name as room_name,
         b.title,
         b.start,
         b.end,
         u.username,
-        TIMESTAMPDIFF(HOUR, b.start, b.end) as duration_hours
+        EXTRACT(EPOCH FROM (b.end - b.start))/3600 as duration_hours
       FROM bookings b
   JOIN rooms r ON b.room_id = r.room_id
   JOIN users u ON b.user_id = u.user_id
-      WHERE b.start >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      WHERE b.start >= NOW() - INTERVAL '7 days'
       ORDER BY b.start DESC
       LIMIT 20
-    `;
-    
-  // Execute all queries
-  const [mostBookedRows] = await db.execute(mostBookedQuery);
-  const [monthlyBookedRows] = await db.execute(monthlyBookedQuery, [currentMonth, currentYear]);
-  const [weeklyBookedRows] = await db.execute(weeklyBookedQuery, [weekStartStr, weekEndStr]);
-  const [dailyBookedRows] = await db.execute(dailyBookedQuery, [todayStr]);
-  const [dayOfWeekRows] = await db.execute(dayOfWeekQuery, [currentMonth, currentYear]);
-  const [peakHoursRows] = await db.execute(peakHoursQuery, [currentMonth, currentYear]);
-  const [recentBookingsRows] = await db.execute(recentBookingsQuery);
+`;
     
     // Process results
     const statistics = {

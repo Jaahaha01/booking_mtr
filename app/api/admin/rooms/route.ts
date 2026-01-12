@@ -13,26 +13,26 @@ export async function GET() {
     }
 
     // ตรวจสอบว่าเป็น admin หรือ staff
-    const [userRows]: any = await db.query('SELECT role FROM users WHERE user_id = ?', [userId]);
+    const userRows = await db`SELECT role FROM users WHERE user_id = ${userId}`;
     const user = userRows?.[0];
 
     if (!user || (user.role !== 'admin' && user.role !== 'staff')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const [rows]: any = await db.query(`
-      SELECT 
-        room_id, 
-        name, 
+    const rows = await db`
+      SELECT
+        room_id,
+        name,
         room_number,
-        capacity, 
-        description, 
+        capacity,
+        description,
         status,
         created_at,
         updated_at
-      FROM rooms 
+      FROM rooms
       ORDER BY name ASC
-    `);
+    `;
 
     return NextResponse.json(rows);
   } catch (error) {
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ตรวจสอบว่าเป็น admin หรือ staff
-    const [userRows]: any = await db.query('SELECT role FROM users WHERE user_id = ?', [userId]);
+    const userRows = await db`SELECT role FROM users WHERE user_id = ${userId}`;
     const user = userRows?.[0];
 
     if (!user || (user.role !== 'admin' && user.role !== 'staff')) {
@@ -78,10 +78,9 @@ export async function POST(req: NextRequest) {
     }
 
     // ตรวจสอบว่าชื่อห้องหรือเลขห้องซ้ำหรือไม่
-    const [existingRoom]: any = await db.query(
-      "SELECT room_id FROM rooms WHERE name = ? OR room_number = ?",
-      [name, room_number]
-    );
+    const existingRoom = await db`
+      SELECT room_id FROM rooms WHERE name = ${name} OR room_number = ${room_number}
+    `;
 
     if (existingRoom.length > 0) {
       return NextResponse.json(
@@ -91,16 +90,17 @@ export async function POST(req: NextRequest) {
     }
 
     // สร้างห้องใหม่
-    const [result]: any = await db.query(`
+    const result = await db`
       INSERT INTO rooms (name, room_number, capacity, description, status)
-      VALUES (?, ?, ?, ?, 'active')
-    `, [name, room_number, capacity, description]);
+      VALUES (${name}, ${room_number}, ${capacity}, ${description}, 'active')
+      RETURNING room_id
+    `;
 
     // ดึงข้อมูลห้องที่เพิ่งสร้าง
-    const [newRoom]: any = await db.query(`
+    const newRoom = await db`
       SELECT room_id, name, room_number, capacity, description, status, created_at
-      FROM rooms WHERE room_id = ?
-    `, [result.insertId]);
+      FROM rooms WHERE room_id = ${result[0].room_id}
+    `;
 
     return NextResponse.json({
       message: 'สร้างห้องประชุมสำเร็จ',

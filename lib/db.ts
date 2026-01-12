@@ -1,23 +1,33 @@
-import mysql from "mysql2/promise";
+import { Client } from 'pg';
 
 const dbConfig = {
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "booking_db",
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  connectTimeout: 60000,
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  // Single connection settings
+  connectionTimeoutMillis: 30000, // 30 seconds
+  query_timeout: 30000,
 };
 
-export const db = mysql.createPool(dbConfig);
+export const client = new Client(dbConfig);
+
+// Connect once
+client.connect().catch(console.error);
+
+export const db = async (strings: TemplateStringsArray, ...values: any[]) => {
+  try {
+    const query = strings.reduce((acc, str, i) => acc + '$' + i + str).slice(0, -1);
+    const result = await client.query(query, values);
+    return result.rows;
+  } catch (error) {
+    console.error('Database query error:', error);
+    throw error;
+  }
+};
 
 export async function testConnection() {
   try {
-    const connection = await db.getConnection();
+    await client.query('SELECT 1');
     console.log('✅ Database connection successful');
-    connection.release();
     return true;
   } catch (error) {
     console.error('❌ Database connection failed:', error);
@@ -27,7 +37,7 @@ export async function testConnection() {
 
 export async function closeConnection() {
   try {
-    await db.end();
+    await client.end();
     console.log('✅ Database connection closed');
   } catch (error) {
     console.error('❌ Error closing database connection:', error);

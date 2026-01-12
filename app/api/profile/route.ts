@@ -7,7 +7,7 @@ export async function GET() {
   const id = cookieStore.get('user_id')?.value;
   if (!id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const [rows]: any = await db.query('SELECT * FROM users WHERE user_id = ?', [id]);
+  const rows = await db`SELECT * FROM users WHERE user_id = ${id}`;
   const user = rows?.[0];
   
   if (!user) {
@@ -39,16 +39,16 @@ export async function PUT(req: NextRequest) {
   const id = cookieStore.get('user_id')?.value;
   const body = await req.json();
 
-  await db.query(`
+  await db`
     UPDATE users SET
-      full_name=?, email=?, phone=?, department=?
-      WHERE user_id=?`,
-      [body.full_name, body.email, body.phone, body.department, id]);
+      full_name=${body.full_name}, email=${body.email}, phone=${body.phone}, department=${body.department}
+      WHERE user_id=${id}
+  `;
 
   if (body.passwordOld && body.passwordNew) {
-  const [user]: any = await db.query('SELECT password FROM users WHERE user_id = ?', [id]);
+    const user = await db`SELECT password FROM users WHERE user_id = ${id}`;
     if (user?.[0]?.password === body.passwordOld) {
-  await db.query('UPDATE users SET password=? WHERE user_id=?', [body.passwordNew, id]);
+      await db`UPDATE users SET password=${body.passwordNew} WHERE user_id=${id}`;
     } else {
       return NextResponse.json({ error: 'รหัสผ่านเดิมไม่ถูกต้อง' }, { status: 400 });
     }

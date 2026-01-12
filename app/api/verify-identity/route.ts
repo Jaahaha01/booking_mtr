@@ -33,10 +33,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ตรวจสอบว่าบัตรประชาชนนี้ถูกใช้แล้วหรือไม่
-    const [existingUser]: any = await db.query(
-      "SELECT user_id FROM users WHERE identity_card = ? AND user_id != ?",
-      [identity_card, userId]
-    );
+    const existingUser = await db`SELECT user_id FROM users WHERE identity_card = ${identity_card} AND user_id != ${userId}`;
 
     if (existingUser.length > 0) {
       return NextResponse.json(
@@ -46,12 +43,9 @@ export async function POST(req: NextRequest) {
     }
 
     // อัปเดตข้อมูลการยืนยันตัวตน (รอการอนุมัติจากแอดมิน)
-    await db.query(
-      `UPDATE users 
-       SET identity_card = ?, address = ?, organization = ?, verification_status = 'pending', updated_at = CURRENT_TIMESTAMP
-       WHERE user_id = ?`,
-      [identity_card, address, organization, userId]
-    );
+    await db`UPDATE users 
+       SET identity_card = ${identity_card}, address = ${address}, organization = ${organization}, verification_status = 'pending', updated_at = CURRENT_TIMESTAMP
+       WHERE user_id = ${userId}`;
 
     return NextResponse.json({
       message: 'ส่งข้อมูลการยืนยันตัวตนสำเร็จ กรุณารอการอนุมัติจากเจ้าหน้าที่',

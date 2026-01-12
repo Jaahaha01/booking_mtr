@@ -21,11 +21,8 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     }
 
     // ตรวจสอบสิทธิ์ admin หรือ staff
-    const [userRows] = (await db.query(
-      "SELECT role FROM users WHERE user_id = ?",
-      [userId]
-    )) as any;
-    const user = userRows?.[0];
+    const userRows = await db`SELECT role FROM users WHERE user_id = ${userId}`;
+    const user = userRows[0];
 
     if (!user || (user.role !== "admin" && user.role !== "staff")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -38,20 +35,17 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 
     // อัปเดตสถานะและ admin/staff ที่ยืนยันหรือยกเลิก
     if (status === "confirmed") {
-      await db.query(
-        "UPDATE bookings SET status = ?, confirmed_by = ? WHERE booking_id = ?",
-        [status, userId, bookingId]
-      );
+      await db`
+        UPDATE bookings SET status = ${status}, confirmed_by = ${userId} WHERE booking_id = ${bookingId}
+      `;
     } else if (status === "cancelled") {
-      await db.query(
-        "UPDATE bookings SET status = ?, cancelled_by = ? WHERE booking_id = ?",
-        [status, userId, bookingId]
-      );
+      await db`
+        UPDATE bookings SET status = ${status}, cancelled_by = ${userId} WHERE booking_id = ${bookingId}
+      `;
     } else if (status === "pending") {
-      await db.query(
-        "UPDATE bookings SET status = ?, confirmed_by = NULL, cancelled_by = NULL WHERE booking_id = ?",
-        [status, bookingId]
-      );
+      await db`
+        UPDATE bookings SET status = ${status}, confirmed_by = NULL, cancelled_by = NULL WHERE booking_id = ${bookingId}
+      `;
     }
 
     return NextResponse.json({ success: true });
@@ -73,9 +67,9 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 
   // ลบ booking และแจ้งเตือน
   try {
-    const [brows]: any = await db.query("SELECT user_id FROM bookings WHERE booking_id = ?", [bookingId]);
+    const brows = await db`SELECT user_id FROM bookings WHERE booking_id = ${bookingId}`;
     const booking = brows?.[0];
-    await db.query("DELETE FROM bookings WHERE booking_id = ?", [bookingId]);
+    await db`DELETE FROM bookings WHERE booking_id = ${bookingId}`;
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting booking:", error);
