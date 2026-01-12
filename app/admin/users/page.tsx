@@ -129,8 +129,7 @@ export default function AdminUsersPage() {
         icon: 'error',
         confirmButtonText: 'ปิด',
         confirmButtonColor: '#dc2626',
-        width: '90%',
-        maxWidth: '500px'
+        width: 'min(90vw, 500px)'
       });
       return;
     }
@@ -144,8 +143,7 @@ export default function AdminUsersPage() {
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: '#dc2626',
       cancelButtonColor: '#6b7280',
-      width: '90%',
-      maxWidth: '500px',
+      width: 'min(90vw, 500px)',
       reverseButtons: true
     });
 
@@ -467,12 +465,7 @@ export default function AdminUsersPage() {
                                                             icon: 'info',
                                                             confirmButtonText: 'ปิด',
                                                             confirmButtonColor: '#7c3aed',
-                                                            width: '90%',
-                                                            maxWidth: '500px',
-                                                            customClass: {
-                                                              container: 'swal2-responsive',
-                                                              popup: 'rounded-2xl shadow-xl'
-                                                            }
+                                                            width: 'min(90vw, 500px)'
                                                           });
                                                         }}
                                                         className="text-purple-600 hover:text-purple-900 transition-colors mr-3 font-medium"
