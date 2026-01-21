@@ -685,8 +685,8 @@ export default function BookingForm() {
                 <div className="space-y-4">
                   {rooms.map((room) => (
                     <div key={room.room_id} className={`border rounded-2xl p-5 transition-all duration-300 ${room.is_available
-                        ? 'border-fuchsia-100 bg-gradient-to-br from-white to-fuchsia-50/50 hover:shadow-md hover:border-fuchsia-200'
-                        : 'border-gray-200 bg-gray-50 opacity-75'
+                      ? 'border-fuchsia-100 bg-gradient-to-br from-white to-fuchsia-50/50 hover:shadow-md hover:border-fuchsia-200'
+                      : 'border-gray-200 bg-gray-50 opacity-75'
                       }`}>
                       <div className="flex justify-between items-start mb-3">
                         <h4 className={`font-bold text-lg ${room.is_available ? 'text-gray-800' : 'text-gray-500'}`}>
@@ -739,7 +739,7 @@ export default function BookingForm() {
                   </li>
                   <li className="flex gap-2">
                     <span className="text-fuchsia-400">•</span>
-                    ห้องที่มีสถานะ "ไม่ว่าง" จะไม่สามารถจองได้
+                    ห้องที่มีสถานะ &quot;ไม่ว่าง&quot; จะไม่สามารถจองได้
                   </li>
                 </ul>
               </div>
