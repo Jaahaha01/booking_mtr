@@ -90,12 +90,35 @@ export default function ProfilePage() {
     const file = e.target.files[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
-    const res = await fetch('/api/upload', { method: 'POST', body: formData });
-    const data = await res.json();
-    setForm({ ...form, image: data.url });
-    setPreview(data.url);
+    // Validate file size (e.g., max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('ขนาดไฟล์ต้องไม่เกิน 5MB');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+
+      if (!res.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await res.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      if (data.url) {
+        setForm({ ...form, image: data.url });
+        setPreview(data.url);
+      }
+    } catch (err) {
+      console.error('Upload Error:', err);
+      alert('เกิดข้อผิดพลาดในการอัพโหลดรูปภาพ');
+    }
   };
 
   const getRoleName = (role: string) => {
@@ -358,7 +381,13 @@ export default function ProfilePage() {
                       />
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      * หากต้องการรับการแจ้งเตือน ให้แอดไลน์บอท <strong>@booking_bot</strong> และพิมพ์คำว่า <strong>&quot;id&quot;</strong> เพื่อรับ User ID ของคุณมาใส่ในช่องนี้
+                      * หากต้องการรับการแจ้งเตือน จำเป็นต้องแอดเพื่อนและขอ ID ก่อน:
+                      <br />
+                      1. แอดเพื่อนผ่านลิงก์: <a href="https://lin.ee/QNOoIX4" target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800">https://lin.ee/QNOoIX4</a> หรือสแกน QR Code
+                      <br />
+                      2. พิมพ์คำว่า <strong>&quot;id&quot;</strong> ส่งไปในแชท (Line ID: <strong>@768hlgsv</strong>)
+                      <br />
+                      3. นำรหัสที่บอทตอบกลับมาใส่ในช่องนี้
                     </p>
                   </div>
                 </div>

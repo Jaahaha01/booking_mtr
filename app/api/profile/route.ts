@@ -45,8 +45,8 @@ export async function PUT(req: NextRequest) {
   await db`
     UPDATE users SET
       fname=${body.fname}, lname=${body.lname}, email=${body.email}, phone=${body.phone}, 
-      address=${body.address}, organization=${body.organization}, image=${body.image},
-      line_user_id=${body.line_user_id}
+      address=${body.address}, organization=${body.organization}, image=${body.image ?? null},
+      line_user_id=${body.line_user_id ?? null}
     WHERE user_id=${id}
   `;
 
