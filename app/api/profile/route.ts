@@ -11,7 +11,7 @@ export async function GET() {
 
   const rows = await db`SELECT * FROM users WHERE user_id = ${id}`;
   const user = rows?.[0];
-  
+
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
@@ -43,8 +43,9 @@ export async function PUT(req: NextRequest) {
 
   await db`
     UPDATE users SET
-      full_name=${body.full_name}, email=${body.email}, phone=${body.phone}, department=${body.department}
-      WHERE user_id=${id}
+      fname=${body.fname}, lname=${body.lname}, email=${body.email}, phone=${body.phone}, 
+      address=${body.address}, organization=${body.organization}, image=${body.image}
+    WHERE user_id=${id}
   `;
 
   if (body.passwordOld && body.passwordNew) {
