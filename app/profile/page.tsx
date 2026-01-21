@@ -358,7 +358,7 @@ export default function ProfilePage() {
                       />
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      * หากต้องการรับการแจ้งเตือน ให้แอดไลน์บอท <strong>@booking_bot</strong> และพิมพ์คำว่า <strong>"id"</strong> เพื่อรับ User ID ของคุณมาใส่ในช่องนี้
+                      * หากต้องการรับการแจ้งเตือน ให้แอดไลน์บอท <strong>@booking_bot</strong> และพิมพ์คำว่า <strong>&quot;id&quot;</strong> เพื่อรับ User ID ของคุณมาใส่ในช่องนี้
                     </p>
                   </div>
                 </div>
