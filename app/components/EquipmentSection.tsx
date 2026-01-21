@@ -51,7 +51,7 @@ const EquipmentSection: React.FC<EquipmentSectionProps> = ({ roomEquipment = '',
               name="want_equipment"
               checked={wantEquipment}
               onChange={() => handleWantEquipment(true)}
-              className="accent-blue-600 scale-110"
+              className="accent-fuchsia-600 scale-110"
             />
             <span className="font-medium">ต้องการอุปกรณ์เสริม</span>
           </label>
@@ -79,7 +79,7 @@ const EquipmentSection: React.FC<EquipmentSectionProps> = ({ roomEquipment = '',
                     type="checkbox"
                     id="mic"
                     name="mic"
-                    className="accent-blue-600 scale-110"
+                    className="accent-fuchsia-600 scale-110"
                     checked={equipment.mic}
                     onChange={handleEquipmentChange}
                   />
@@ -100,7 +100,7 @@ const EquipmentSection: React.FC<EquipmentSectionProps> = ({ roomEquipment = '',
                     type="checkbox"
                     id="speaker"
                     name="speaker"
-                    className="accent-blue-600 scale-110"
+                    className="accent-fuchsia-600 scale-110"
                     checked={equipment.speaker}
                     onChange={handleEquipmentChange}
                   />
@@ -129,7 +129,7 @@ const EquipmentSection: React.FC<EquipmentSectionProps> = ({ roomEquipment = '',
                     type="checkbox"
                     id="projector"
                     name="projector"
-                    className="accent-purple-600 scale-110"
+                    className="accent-fuchsia-600 scale-110"
                     checked={equipment.projector}
                     onChange={handleEquipmentChange}
                   />
@@ -150,7 +150,7 @@ const EquipmentSection: React.FC<EquipmentSectionProps> = ({ roomEquipment = '',
                     type="checkbox"
                     id="screen"
                     name="screen"
-                    className="accent-purple-600 scale-110"
+                    className="accent-fuchsia-600 scale-110"
                     checked={equipment.screen}
                     onChange={handleEquipmentChange}
                   />
@@ -178,7 +178,7 @@ const EquipmentSection: React.FC<EquipmentSectionProps> = ({ roomEquipment = '',
                   type="checkbox"
                   id="other"
                   name="other"
-                  className="accent-green-600 scale-110"
+                  className="accent-pink-600 scale-110"
                   checked={equipment.other}
                   onChange={handleEquipmentChange}
                 />
@@ -187,7 +187,7 @@ const EquipmentSection: React.FC<EquipmentSectionProps> = ({ roomEquipment = '',
                   type="text"
                   name="otherText"
                   placeholder="ระบุอุปกรณ์"
-                  className="w-32 px-2 py-1 border rounded ml-2 focus:ring-2 focus:ring-green-400"
+                  className="w-32 px-2 py-1 border rounded ml-2 focus:ring-2 focus:ring-fuchsia-400 focus:outline-none border-fuchsia-200"
                   value={equipment.otherText}
                   onChange={handleEquipmentChange}
                   disabled={!equipment.other}
