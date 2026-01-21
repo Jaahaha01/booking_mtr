@@ -11,8 +11,8 @@ export default function CalendarComponent() {
   const calendarRef = useRef(null);
   const [events, setEvents] = useState([]);
   const [allEvents, setAllEvents] = useState([]); // เก็บ event ทั้งหมด
-    // Custom render event content for all views
-    function renderEventContent(eventInfo: any) {
+  // Custom render event content for all views
+  function renderEventContent(eventInfo: any) {
     const props = eventInfo.event.extendedProps;
     function truncate(str: string, n: number) {
       return str && str.length > n ? str.slice(0, n) + '...' : str;
@@ -81,7 +81,7 @@ export default function CalendarComponent() {
         <span className="text-blue-700">{startTime} - {endTime}</span>
       </div>
     );
-    }
+  }
   const [filter, setFilter] = useState('all'); // filter สถานะ
   // Map status to color
   function getStatusColor(status: string): string {
@@ -109,12 +109,12 @@ export default function CalendarComponent() {
           };
         });
         try {
-          console.debug('bookings fetched sample', mapped.slice(0,3).map((e: any)=>({id:e.id, start:e.start, end:e.end, title:e.title})));
-        } catch (e) {}
-  // filter เฉพาะ pending กับ confirmed
-  const filtered = mapped.filter((ev: any) => ev.status === 'pending' || ev.status === 'confirmed');
-  setAllEvents(filtered);
-  setEvents(filtered);
+          console.debug('bookings fetched sample', mapped.slice(0, 3).map((e: any) => ({ id: e.id, start: e.start, end: e.end, title: e.title })));
+        } catch (e) { }
+        // filter เฉพาะ pending กับ confirmed
+        const filtered = mapped.filter((ev: any) => ev.status === 'pending' || ev.status === 'confirmed');
+        setAllEvents(filtered);
+        setEvents(filtered);
       });
   };
 
@@ -132,7 +132,7 @@ export default function CalendarComponent() {
   }, [filter, allEvents]);
 
   // Tooltip state
-  const [tooltip, setTooltip] = useState<{visible: boolean, x: number, y: number, content: string}>({visible: false, x: 0, y: 0, content: ''});
+  const [tooltip, setTooltip] = useState<{ visible: boolean, x: number, y: number, content: string }>({ visible: false, x: 0, y: 0, content: '' });
 
   // Tooltip handler
   function handleEventMouseEnter(info: any) {
@@ -199,9 +199,9 @@ export default function CalendarComponent() {
       </div>
       {/* ปุ่ม filter สถานะ */}
       <div className="flex gap-2 px-6 pb-2 mt-2">
-        <button onClick={() => setFilter('all')} className={`px-3 py-1 rounded-lg font-medium shadow transition-all duration-300 ${filter==='all'?'bg-blue-600 text-white scale-105':'bg-gray-100 text-blue-700 hover:bg-blue-100'}`}>ทั้งหมด</button>
-        <button onClick={() => setFilter('pending')} className={`px-3 py-1 rounded-lg font-medium shadow transition-all duration-300 ${filter==='pending'?'bg-yellow-400 text-yellow-900 scale-105':'bg-gray-100 text-yellow-700 hover:bg-yellow-100'}`}>รอดำเนินการ</button>
-        <button onClick={() => setFilter('confirmed')} className={`px-3 py-1 rounded-lg font-medium shadow transition-all duration-300 ${filter==='confirmed'?'bg-green-400 text-green-900 scale-105':'bg-gray-100 text-green-700 hover:bg-green-100'}`}>ยืนยันแล้ว</button>
+        <button onClick={() => setFilter('all')} className={`px-3 py-1 rounded-lg font-medium shadow transition-all duration-300 ${filter === 'all' ? 'bg-blue-600 text-white scale-105' : 'bg-gray-100 text-blue-700 hover:bg-blue-100'}`}>ทั้งหมด</button>
+        <button onClick={() => setFilter('pending')} className={`px-3 py-1 rounded-lg font-medium shadow transition-all duration-300 ${filter === 'pending' ? 'bg-yellow-400 text-yellow-900 scale-105' : 'bg-gray-100 text-yellow-700 hover:bg-yellow-100'}`}>รอดำเนินการ</button>
+        <button onClick={() => setFilter('confirmed')} className={`px-3 py-1 rounded-lg font-medium shadow transition-all duration-300 ${filter === 'confirmed' ? 'bg-green-400 text-green-900 scale-105' : 'bg-gray-100 text-green-700 hover:bg-green-100'}`}>ยืนยันแล้ว</button>
       </div>
       <div className="px-2 md:px-6 pb-6">
         <div style={{ minHeight: 600, height: 600 }}>
@@ -393,30 +393,26 @@ export default function CalendarComponent() {
             min-height: 24px !important;
             height: 24px !important;
           }
-          /* Prevent timeGrid events from visually overflowing their slot container */
           .fc .fc-timegrid .fc-timegrid-event-harness {
-            overflow: hidden !important;
+           /* overflow: hidden !important; - removed to prevent clipping */
           }
           .fc .fc-timegrid .fc-timegrid-event {
             box-sizing: border-box !important;
-            max-height: 100% !important;
-            overflow: hidden !important;
             border-bottom-left-radius: 0 !important;
             border-bottom-right-radius: 0 !important;
           }
           /* ensure slot lane clips children */
           .fc .fc-timegrid .fc-timegrid-slot-lane {
-            overflow: hidden !important;
+            /* overflow: hidden !important; - removed to prevent clipping */
           }
           /* ให้ .fc-scroller มี scrollbar แนวตั้งและความสูงจำกัด */
           .fc .fc-scroller {
             overflow-y: auto !important;
             max-height: 600px !important;
           }
-          /* ensure event inner content doesn't push outside */
           .fc .fc-timegrid-event-harness > * {
-            max-height: 100% !important;
-            overflow: hidden !important;
+            /* max-height: 100% !important; */
+            /* overflow: hidden !important; */
           }
           /* สไตล์สำหรับ "Show more" link */
           .fc .fc-daygrid-more-link {
