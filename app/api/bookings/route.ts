@@ -205,9 +205,13 @@ export async function POST(req: NextRequest) {
     }
 
     // สร้างการจองใหม่ (สถานะ pending)
+    // Add +07 offset for Thailand time when saving to DB to ensure TIMESTAMPTZ is correct
+    const dbStart = `${start}+07`;
+    const dbEnd = `${end}+07`;
+    
     const result = await db`
       INSERT INTO bookings (title, room_id, user_id, start, "end", status, attendees, notes)
-      VALUES (${title}, ${room_id}, ${userId}, ${start}, ${end}, 'pending', ${attendees}, ${notes})
+      VALUES (${title}, ${room_id}, ${userId}, ${dbStart}, ${dbEnd}, 'pending', ${attendees}, ${notes})
       RETURNING booking_id
     `;
 
