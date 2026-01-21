@@ -31,6 +31,7 @@ export async function GET() {
     verification_status: user.verification_status,
     role: user.role,
     image: user.image,
+    line_user_id: user.line_user_id,
     created_at: user.created_at,
     updated_at: user.updated_at
   });
@@ -44,7 +45,8 @@ export async function PUT(req: NextRequest) {
   await db`
     UPDATE users SET
       fname=${body.fname}, lname=${body.lname}, email=${body.email}, phone=${body.phone}, 
-      address=${body.address}, organization=${body.organization}, image=${body.image}
+      address=${body.address}, organization=${body.organization}, image=${body.image},
+      line_user_id=${body.line_user_id}
     WHERE user_id=${id}
   `;
 

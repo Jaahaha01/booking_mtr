@@ -35,22 +35,37 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
+    // ดึงข้อมูลการจองเพื่อส่งแจ้งเตือน
+    const existingBookings = await db`SELECT user_id, title, start, "end", room_id FROM bookings WHERE booking_id = ${bookingId}`;
+    const booking = existingBookings[0];
+
     // อัปเดตสถานะและ admin/staff ที่ยืนยันหรือยกเลิก
     if (status === "confirmed") {
       await db`
         UPDATE bookings SET status = ${status}, confirmed_by = ${userId} WHERE booking_id = ${bookingId}
       `;
+      // Send Notification
+      if (booking) {
+        const { sendLineNotification } = await import('@/lib/line');
+        const startStr = new Date(booking.start).toLocaleString('th-TH');
+        await sendLineNotification(booking.user_id, `✅ การจองห้องประชุมได้รับการอนุมัติ\nหัวข้อ: ${booking.title}\nเวลา: ${startStr}`);
+      }
     } else if (status === "cancelled") {
       await db`
         UPDATE bookings SET status = ${status}, cancelled_by = ${userId} WHERE booking_id = ${bookingId}
       `;
+      // Send Notification
+      if (booking) {
+        const { sendLineNotification } = await import('@/lib/line');
+        await sendLineNotification(booking.user_id, `❌ การจองห้องประชุมถูกปฏิเสธ/ยกเลิก\nหัวข้อ: ${booking.title}`);
+      }
     } else if (status === "pending") {
       await db`
         UPDATE bookings SET status = ${status}, confirmed_by = NULL, cancelled_by = NULL WHERE booking_id = ${bookingId}
       `;
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, confirmed_name: user.fname, cancelled_name: user.fname });
   } catch (error) {
     console.error("Error updating booking status:", error);
     return NextResponse.json(

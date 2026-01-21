@@ -16,6 +16,7 @@ export default function ProfilePage() {
     image: '',
     passwordOld: '',
     passwordNew: '',
+    line_user_id: '',
   });
 
   const [error, setError] = useState('');
@@ -48,7 +49,7 @@ export default function ProfilePage() {
     setIsLoading(true);
     setError('');
     setSuccess('');
-    
+
     const requiredFields = ['fname', 'lname', 'email', 'phone', 'address', 'organization'] as const;
     for (const key of requiredFields) {
       if (!form[key as keyof typeof form]) {
@@ -70,15 +71,15 @@ export default function ProfilePage() {
       setIsLoading(false);
       return;
     }
-    
+
     setSuccess('✅ บันทึกข้อมูลสำเร็จ');
     setIsEditing(false);
     setIsLoading(false);
-    
+
     // Update user state
     const updatedUser = { ...user, ...form };
     setUser(updatedUser);
-    
+
     // Show verification popup if user is not verified
     if (updatedUser.verification_status !== 'approved' && !updatedUser.is_verified) {
       setShowVerificationPopup(true);
@@ -88,7 +89,7 @@ export default function ProfilePage() {
   const handleImageChange = async (e: any) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     const formData = new FormData();
     formData.append('file', file);
     const res = await fetch('/api/upload', { method: 'POST', body: formData });
@@ -105,7 +106,7 @@ export default function ProfilePage() {
 
   const getVerificationStatus = () => {
     if (!user) return null;
-    
+
     if (user.verification_status === 'approved') {
       return {
         text: 'ยืนยันตัวตนแล้ว',
@@ -168,8 +169,8 @@ export default function ProfilePage() {
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors duration-200 font-medium"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,12 +187,12 @@ export default function ProfilePage() {
             <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-8">
               <div className="text-center">
                 <div className="relative inline-block">
-                  <Image 
-                    src={preview} 
-                    alt="avatar" 
-                    width={120} 
-                    height={120} 
-                    className="rounded-full object-cover w-[120px] h-[120px] border-4 border-blue-100 shadow-lg" 
+                  <Image
+                    src={preview}
+                    alt="avatar"
+                    width={120}
+                    height={120}
+                    className="rounded-full object-cover w-[120px] h-[120px] border-4 border-blue-100 shadow-lg"
                   />
                   {isEditing && (
                     <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors duration-200 shadow-lg">
@@ -202,12 +203,12 @@ export default function ProfilePage() {
                     </label>
                   )}
                 </div>
-                
+
                 <h2 className="text-xl font-semibold text-gray-800 mt-4">
                   {user.fname} {user.lname}
                 </h2>
                 <p className="text-gray-600 text-sm">{user.email}</p>
-                
+
                 <div className="mt-4 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -225,7 +226,7 @@ export default function ProfilePage() {
 
                 {!isEditing && (
                   <div className="mt-6 space-y-3">
-                    <button 
+                    <button
                       onClick={() => setIsEditing(true)}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 font-medium"
                     >
@@ -285,7 +286,7 @@ export default function ProfilePage() {
               <div className="bg-white rounded-2xl shadow-lg p-8">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-xl font-semibold text-gray-800">แก้ไขข้อมูลส่วนตัว</h3>
-                  <button 
+                  <button
                     onClick={() => setIsEditing(false)}
                     className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
                   >
@@ -298,60 +299,74 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">ชื่อจริง *</label>
-                    <input 
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
-                      value={form.fname} 
-                      onChange={e => setForm({ ...form, fname: e.target.value })} 
+                    <input
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      value={form.fname}
+                      onChange={e => setForm({ ...form, fname: e.target.value })}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">นามสกุล *</label>
-                    <input 
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
-                      value={form.lname} 
-                      onChange={e => setForm({ ...form, lname: e.target.value })} 
+                    <input
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      value={form.lname}
+                      onChange={e => setForm({ ...form, lname: e.target.value })}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">อีเมล *</label>
-                    <input 
+                    <input
                       type="email"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
-                      value={form.email} 
-                      onChange={e => setForm({ ...form, email: e.target.value })} 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      value={form.email}
+                      onChange={e => setForm({ ...form, email: e.target.value })}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">เบอร์โทร *</label>
-                    <input 
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
-                      value={form.phone} 
-                      onChange={e => setForm({ ...form, phone: e.target.value })} 
+                    <input
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      value={form.phone}
+                      onChange={e => setForm({ ...form, phone: e.target.value })}
                     />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">ที่อยู่ *</label>
-                    <textarea 
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none" 
+                    <textarea
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
                       rows={3}
-                      value={form.address} 
-                      onChange={e => setForm({ ...form, address: e.target.value })} 
+                      value={form.address}
+                      onChange={e => setForm({ ...form, address: e.target.value })}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">ชื่อสำนักงาน *</label>
-                    <input 
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
-                      value={form.organization} 
-                      onChange={e => setForm({ ...form, organization: e.target.value })} 
+                    <input
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      value={form.organization}
+                      onChange={e => setForm({ ...form, organization: e.target.value })}
                     />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Line User ID (สำหรับการแจ้งเตือน)</label>
+                    <div className="flex gap-2">
+                      <input
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        value={form.line_user_id || ''}
+                        onChange={e => setForm({ ...form, line_user_id: e.target.value })}
+                        placeholder="เช่น U12345678..."
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      * หากต้องการรับการแจ้งเตือน ให้แอดไลน์บอท <strong>@booking_bot</strong> และพิมพ์คำว่า <strong>"id"</strong> เพื่อรับ User ID ของคุณมาใส่ในช่องนี้
+                    </p>
                   </div>
                 </div>
 
                 {/* Password Change Section */}
                 <div className="mt-8 p-6 bg-gray-50 rounded-lg">
-                  <button 
-                    onClick={() => setShowPassword(!showPassword)} 
+                  <button
+                    onClick={() => setShowPassword(!showPassword)}
                     className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2 transition-colors duration-200"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -361,19 +376,19 @@ export default function ProfilePage() {
                   </button>
                   {showPassword && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      <input 
-                        type="password" 
-                        placeholder="รหัสผ่านเดิม" 
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
-                        value={form.passwordOld} 
-                        onChange={e => setForm({ ...form, passwordOld: e.target.value })} 
+                      <input
+                        type="password"
+                        placeholder="รหัสผ่านเดิม"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        value={form.passwordOld}
+                        onChange={e => setForm({ ...form, passwordOld: e.target.value })}
                       />
-                      <input 
-                        type="password" 
-                        placeholder="รหัสผ่านใหม่" 
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
-                        value={form.passwordNew} 
-                        onChange={e => setForm({ ...form, passwordNew: e.target.value })} 
+                      <input
+                        type="password"
+                        placeholder="รหัสผ่านใหม่"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        value={form.passwordNew}
+                        onChange={e => setForm({ ...form, passwordNew: e.target.value })}
                       />
                     </div>
                   )}
@@ -392,8 +407,8 @@ export default function ProfilePage() {
                 )}
 
                 <div className="flex gap-4 mt-8">
-                  <button 
-                    onClick={handleSubmit} 
+                  <button
+                    onClick={handleSubmit}
                     disabled={isLoading}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center gap-2"
                   >
@@ -411,7 +426,7 @@ export default function ProfilePage() {
                       </>
                     )}
                   </button>
-                  <button 
+                  <button
                     onClick={() => setIsEditing(false)}
                     className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium"
                   >
@@ -453,6 +468,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }
