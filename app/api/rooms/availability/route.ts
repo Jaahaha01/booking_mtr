@@ -24,20 +24,25 @@ type BookingRow = {
 
 export async function GET() {
   try {
-    // 1) ห้องที่ active ทั้งหมด
+    // 1) ห้องที่ active ทั้งหมด พร้อมคะแนนเฉลี่ย
     const rooms = await db`
       SELECT 
-        room_id, 
-        name, 
-        room_number,
-        capacity, 
-        description, 
-        status,
-        created_at,
-        updated_at
-      FROM rooms 
-      WHERE status = 'active'
-      ORDER BY name ASC
+        r.room_id, 
+        r.name, 
+        r.room_number,
+        r.capacity, 
+        r.description, 
+        r.status,
+        r.created_at,
+        r.updated_at,
+        COALESCE(AVG(f.rating), 0) as rating,
+        COUNT(f.feedback_id) as review_count
+      FROM rooms r
+      LEFT JOIN bookings b ON r.room_id = b.room_id
+      LEFT JOIN feedbacks f ON b.booking_id = f.booking_id
+      WHERE r.status = 'active'
+      GROUP BY r.room_id
+      ORDER BY r.name ASC
     `;
 
     // 2) ดึงการจองที่ status = 'confirmed' ที่เวลาซ้อนกับปัจจุบัน (ห้องไม่ว่าง)
@@ -70,10 +75,20 @@ export async function GET() {
       if (!prev || new Date(b.start) > new Date(prev.start)) confirmedMap.set(b.room_id, b as BookingRow);
     });
 
-    // 4) จัดรูปข้อมูลให้ตรงกับหน้าตา UI (availability เป็น 'ว่าง' | 'ไม่ว่าง' + currentBooking เฉพาะ confirmed)
+    // 4) จัดรูปข้อมูลให้ตรงกับหน้าตา UI
     const uiRooms = rooms.map(r => {
       const cur = currentMap.get(r.room_id);
       const lastConfirmed = confirmedMap.get(r.room_id);
+
+      // Mock images based on room name or id for "icon or picture" requirement
+      // In a real app, this should come from DB or storage
+      const roomImages = [
+        "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000",
+        "https://images.unsplash.com/photo-1517502886379-060d03db861c?auto=format&fit=crop&q=80&w=1000",
+        "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1000"
+      ];
+      const imageIndex = (r.room_id - 1) % roomImages.length;
+
       return {
         room_id: r.room_id,
         name: r.name,
@@ -81,15 +96,18 @@ export async function GET() {
         capacity: r.capacity ?? "",
         equipment: r.equipment ?? "",
         description: r.description ?? "",
+        rating: parseFloat(r.rating).toFixed(1),
+        review_count: parseInt(r.review_count),
+        image: roomImages[imageIndex],
         availability: cur ? ("ไม่ว่าง" as const) : ("ว่าง" as const),
         ...(lastConfirmed
           ? {
-              currentBooking: {
-                title: lastConfirmed.title,
-                start: new Date(lastConfirmed.start).toISOString(),
-                end: new Date(lastConfirmed.end).toISOString(),
-              },
-            }
+            currentBooking: {
+              title: lastConfirmed.title,
+              start: new Date(lastConfirmed.start).toISOString(),
+              end: new Date(lastConfirmed.end).toISOString(),
+            },
+          }
           : {}),
       };
     });
@@ -98,7 +116,6 @@ export async function GET() {
     const occupiedRooms = uiRooms.filter(r => r.availability === "ไม่ว่าง").length;
     const availableRooms = totalRooms - occupiedRooms;
 
-    // 4) ส่งรูปแบบ JSON ให้ตรงกับที่หน้า RoomAvailabilityPage ใช้
     return NextResponse.json({
       success: true,
       data: {

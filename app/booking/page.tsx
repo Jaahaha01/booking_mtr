@@ -5,7 +5,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { format, parseISO, isBefore, isAfter, isEqual } from 'date-fns';
 import EquipmentSection from '@/app/components/EquipmentSection';
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 interface Room {
@@ -54,6 +54,8 @@ export default function BookingForm() {
     }
   }, [showPastBookingPopup]);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialRoomId = searchParams.get('room_id');
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -67,7 +69,7 @@ export default function BookingForm() {
   const [form, setForm] = useState<BookingFormData>({
     title: '',
     description: '',
-    room_id: '',
+    room_id: initialRoomId || '',
     start: '',
     end: '',
     attendees: '',
