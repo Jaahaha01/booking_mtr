@@ -191,6 +191,7 @@ export default function Navbar() {
             <div className="hidden lg:flex items-center space-x-1">
               {[
                 { href: "/", label: "หน้าหลัก" },
+                { href: "/dashboard", label: "ภาพรวม" },
                 { href: "/booking", label: "จองห้องประชุม" },
                 { href: "/bookings", label: "สถานะการจอง" },
                 { href: "/history", label: "ประวัติการจอง" },
@@ -459,8 +460,10 @@ export default function Navbar() {
             <div className="px-4 pt-2 pb-4 space-y-1">
               {[
                 { href: "/", label: "หน้าหลัก" },
+                { href: "/dashboard", label: "ภาพรวม" },
                 { href: "/booking", label: "จองห้องประชุม" },
                 { href: "/bookings", label: "สถานะการจอง" },
+                { href: "/history", label: "ประวัติการจอง" },
                 { href: "/rooms/availability", label: "ตรวจสอบห้องว่าง" },
               ].map((item) => (
                 <Link
