@@ -157,39 +157,28 @@ export default function Chatbot() {
     ]);
   };
 
+  // Enable typing input
   const handleBotResponse = async (userMessage: string) => {
     setIsTyping(true);
-    await new Promise(resolve => setTimeout(resolve, 400));
+    // await new Promise(resolve => setTimeout(resolve, 400)); // Remove fake delay, wait for real API
 
-    let response = '';
-    const options: string[] = quickQuestions;
-    const message = userMessage.toLowerCase();
+    try {
+      const res = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage })
+      });
 
-    if (message.includes('ว่าง')) {
-      // ดึงข้อมูลห้องว่างจาก API ใหม่
-      try {
-        const res = await fetch('/api/chatbot');
+      if (res.ok) {
         const data = await res.json();
-        if (data.count > 0) {
-          response = `✅ ขณะนี้มีห้องประชุมว่าง ${data.count} ห้อง\n`;
-          response += data.rooms.map((r: any, idx: number) => `• ${r.name} (${r.capacity} คน)`).join('\n');
-        } else {
-          response = '❌ ขณะนี้ไม่มีห้องประชุมว่างเลยครับ';
-        }
-      } catch {
-        response = '⚠️ ไม่สามารถดึงข้อมูลห้องประชุมว่างได้ในขณะนี้';
+        addMessage(data.reply, 'bot', quickQuestions); // Always show quick questions as backup options
+      } else {
+        addMessage('ขออภัย ระบบขัดข้องชั่วคราว', 'bot');
       }
-    } else if (message.includes('ยกเลิก')) {
-  response = '❌ คุณสามารถยกเลิกคำขอจองได้ที่หน้า <a href="/bookings" class="text-blue-600 underline">สถานะการจอง</a> แล้วกดลบการจองที่ไม่ต้องการได้เลยครับ';
-    } else if (message.includes('ประวัติ')) {
-  response = '📚 ดูประวัติการจองทั้งหมดได้ที่หน้า <a href="/history" class="text-blue-600 underline">ประวัติการจอง</a>';
-    } else if (message.includes('จอง')) {
-      response = '📝 ไปที่หน้า "จองห้องประชุม" เลือกห้องและเวลากดจองได้เลยครับ';
-    } else {
-      response = '🤔 เลือกคำถามที่ต้องการจากปุ่มด้านล่างได้เลยครับ';
+    } catch (e) {
+      addMessage('ไม่สามารถติดต่อเซิร์ฟเวอร์ได้', 'bot');
     }
 
-    addMessage(response, 'bot', options);
     setIsTyping(false);
   };
 
@@ -259,7 +248,7 @@ export default function Chatbot() {
               >
                 ล้างแชท
               </button>
-              <button 
+              <button
                 onClick={() => setIsOpen(false)}
                 className="text-white hover:text-gray-200 transition-colors"
                 title="ปิด"
@@ -282,22 +271,20 @@ export default function Chatbot() {
                     </svg>
                   </div>
                 )}
-                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                  message.sender === 'user' 
-                    ? 'bg-blue-500 text-white rounded-br-md' 
-                    : 'bg-white text-gray-800 rounded-bl-md shadow-sm border border-gray-200'
-                }`}>
+                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${message.sender === 'user'
+                  ? 'bg-blue-500 text-white rounded-br-md'
+                  : 'bg-white text-gray-800 rounded-bl-md shadow-sm border border-gray-200'
+                  }`}>
                   {message.sender === 'bot' ? (
                     <p className="text-sm whitespace-pre-line leading-relaxed" dangerouslySetInnerHTML={{ __html: message.text }} />
                   ) : (
                     <p className="text-sm whitespace-pre-line leading-relaxed">{message.text}</p>
                   )}
-                  <p className={`text-xs mt-1 ${
-                    message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
-                  }`}>
-                    {message.timestamp.toLocaleTimeString('th-TH', { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
+                  <p className={`text-xs mt-1 ${message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
+                    }`}>
+                    {message.timestamp.toLocaleTimeString('th-TH', {
+                      hour: '2-digit',
+                      minute: '2-digit'
                     })}
                   </p>
                 </div>
@@ -310,7 +297,7 @@ export default function Chatbot() {
                 )}
               </div>
             ))}
-            
+
             {/* Typing Indicator - Messenger Style */}
             {isTyping && (
               <div className="flex justify-start">
@@ -355,7 +342,7 @@ export default function Chatbot() {
                 </div>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
             {/* Scroll to bottom button */}
             <button
@@ -369,7 +356,34 @@ export default function Chatbot() {
           </div>
 
           {/* Input Area - Messenger Style */}
-          {/* ช่องพิมพ์แชทถูกซ่อน เหลือแต่ quick options */}
+          <div className="p-3 bg-white border-t border-gray-100">
+            <div className="flex items-end space-x-2 bg-gray-100 rounded-3xl p-2">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                placeholder="สอบถามได้เลยครับ..."
+                className="flex-1 bg-transparent border-none focus:ring-0 text-sm resize-none max-h-32 py-2 px-2"
+                value={inputMessage}
+                onChange={(e) => {
+                  setInputMessage(e.target.value);
+                  autoResizeTextarea(e.target);
+                }}
+                onKeyDown={handleKeyPress}
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!inputMessage.trim()}
+                className={`p-2 rounded-full flex-shrink-0 transition-colors duration-200 ${inputMessage.trim()
+                    ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-md'
+                    : 'bg-gray-300 text-gray-400 cursor-not-allowed'
+                  }`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>
