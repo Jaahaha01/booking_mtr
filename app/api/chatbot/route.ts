@@ -10,8 +10,10 @@ export async function POST(req: NextRequest) {
 
 		// 1. Fetch real-time room availability logic
 		if (lcMessage.includes('ว่าง') || lcMessage.includes('available')) {
-			// Get all active rooms
-			const rooms = await db`SELECT * FROM rooms WHERE is_active = true`;
+			// Get all active rooms - Handle both schema possibilities safely or fetch all and filter in JS
+			// To be safe across schemas safely, let's fetch all rooms and filter in JS
+			const rooms = await db`SELECT * FROM rooms`;
+			const activeRooms = rooms.filter((r: any) => r.status === 'active' || r.is_active === true || r.is_active === 1);
 
 			// Check busy rooms NOW
 			const busy = await db`
@@ -21,7 +23,7 @@ export async function POST(req: NextRequest) {
       `;
 			const busyIds = new Set(busy.map((b: any) => b.room_id));
 
-			const availableRooms = rooms.filter((r: any) => !busyIds.has(r.room_id));
+			const availableRooms = activeRooms.filter((r: any) => !busyIds.has(r.room_id));
 
 			if (availableRooms.length > 0) {
 				return NextResponse.json({
@@ -35,28 +37,43 @@ export async function POST(req: NextRequest) {
 			}
 		}
 
-		// 2. Room recommendation based on capacity (e.g. "เหมาะกับ 30 คน")
+		// 2. Room recommendation based on capacity
 		const capacityMatch = lcMessage.match(/(\d+)\s*คน/);
 		if (capacityMatch && (lcMessage.includes('เหมาะ') || lcMessage.includes('คน'))) {
 			const requiredCapacity = parseInt(capacityMatch[1]);
 
-			// Find rooms with capacity >= required
-			const rooms = await db`
-            SELECT * FROM rooms 
-            WHERE is_active = true AND capacity >= ${requiredCapacity}
-            ORDER BY capacity ASC
-            LIMIT 3
-        `;
+			// Fetch all rooms and filter in JS to handle "50 คน" (string) vs 50 (int)
+			const rooms = await db`SELECT * FROM rooms`;
 
-			if (rooms.length > 0) {
-				const bestRoom = rooms[0];
+			const matchingRooms = rooms.filter((r: any) => {
+				const isActive = r.status === 'active' || r.is_active === true || r.is_active === 1;
+				if (!isActive) return false;
+
+				// Parse capacity
+				let cap = 0;
+				if (typeof r.capacity === 'number') {
+					cap = r.capacity;
+				} else if (typeof r.capacity === 'string') {
+					// Extract number from string like "50 คน"
+					const match = r.capacity.match(/(\d+)/);
+					cap = match ? parseInt(match[1]) : 0;
+				}
+				return cap >= requiredCapacity;
+			}).sort((a: any, b: any) => {
+				// Sort by capacity ASC
+				const getCap = (r: any) => typeof r.capacity === 'number' ? r.capacity : parseInt(r.capacity?.toString().match(/(\d+)/)?.[1] || '0');
+				return getCap(a) - getCap(b);
+			}).slice(0, 3);
+
+			if (matchingRooms.length > 0) {
+				const bestRoom = matchingRooms[0];
 				return NextResponse.json({
 					reply: `สำหรับ ${requiredCapacity} ท่าน ขอแนะนำ "${bestRoom.name}" ครับ (รองรับได้สูงสุด ${bestRoom.capacity} คน)\n\n` +
-						`อุปกรณ์: ${bestRoom.equipment || 'โปรเจคเตอร์, ไวท์บอร์ด'}`
+						`อุปกรณ์: ${bestRoom.equipment || bestRoom.description || 'โปรเจคเตอร์, ไวท์บอร์ด'}`
 				});
 			} else {
 				return NextResponse.json({
-					reply: `ขออภัยครับ ทางเราไม่มีห้องที่รองรับจำนวน ${requiredCapacity} ท่านได้ (ห้องใหญ่สุดรองรับได้สูงสุด 50 คน)`
+					reply: `ขออภัยครับ ทางเราไม่มีห้องที่รองรับจำนวน ${requiredCapacity} ท่านได้`
 				});
 			}
 		}

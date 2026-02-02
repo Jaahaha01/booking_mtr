@@ -190,13 +190,12 @@ export default function Navbar() {
             {/* Links */}
             <div className="hidden lg:flex items-center space-x-1">
               {[
-                { href: "/", label: "หน้าหลัก", public: true },
-                { href: "/dashboard", label: "ภาพรวม", public: false },
-                { href: "/booking", label: "จองห้องประชุม", public: false },
-                { href: "/bookings", label: "สถานะการจอง", public: false },
-                { href: "/history", label: "ประวัติการจอง", public: false },
-                { href: "/rooms/availability", label: "ตรวจสอบห้องว่าง", public: true },
-              ].filter(item => item.public || (user && user.email)).map((item) => {
+                { href: "/", label: "หน้าหลัก" },
+                { href: "/dashboard", label: "รายงาน" },
+                { href: "/booking", label: "จองห้องประชุม" },
+                { href: "/bookings", label: "สถานะการจอง" },
+                { href: "/rooms/availability", label: "ตรวจสอบห้องว่าง" },
+              ].map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <Link
@@ -459,13 +458,12 @@ export default function Navbar() {
           <div className="lg:hidden backdrop-blur-xl bg-white/95 border-t border-white/20">
             <div className="px-4 pt-2 pb-4 space-y-1">
               {[
-                { href: "/", label: "หน้าหลัก", public: true },
-                { href: "/dashboard", label: "ภาพรวม", public: false },
-                { href: "/booking", label: "จองห้องประชุม", public: false },
-                { href: "/bookings", label: "สถานะการจอง", public: false },
-                { href: "/history", label: "ประวัติการจอง", public: false },
-                { href: "/rooms/availability", label: "ตรวจสอบห้องว่าง", public: true },
-              ].filter(item => item.public || (user && user.email)).map((item) => (
+                { href: "/", label: "หน้าหลัก" },
+                { href: "/dashboard", label: "รายงาน" },
+                { href: "/booking", label: "จองห้องประชุม" },
+                { href: "/bookings", label: "สถานะการจอง" },
+                { href: "/rooms/availability", label: "ตรวจสอบห้องว่าง" },
+              ].map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
