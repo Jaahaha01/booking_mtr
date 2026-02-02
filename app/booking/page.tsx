@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { format, parseISO, isBefore, isAfter, isEqual } from 'date-fns';
@@ -31,7 +31,7 @@ interface BookingFormData {
   customEndTime?: string;
 }
 
-export default function BookingForm() {
+function BookingContent() {
   // ...existing code...
   // ...existing code...
   const [showPastBookingPopup, setShowPastBookingPopup] = useState(false);
@@ -801,5 +801,20 @@ export default function BookingForm() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-fuchsia-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fuchsia-600 mx-auto mb-4"></div>
+          <p className="text-fuchsia-800 font-medium">กำลังโหลด...</p>
+        </div>
+      </div>
+    }>
+      <BookingContent />
+    </Suspense>
   );
 }
