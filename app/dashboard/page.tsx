@@ -272,7 +272,7 @@ export default function DashboardPage() {
                                     </div>
                                     <div className="ml-3">
                                         <p className="text-sm text-blue-700">
-                                            การจองล่าสุดของคุณ <span className="font-bold">"{recentBookings[0].title}"</span> กำลังรอการตรวจสอบสถานะ
+                                            การจองล่าสุดของคุณ <span className="font-bold">&quot;{recentBookings[0].title}&quot;</span> กำลังรอการตรวจสอบสถานะ
                                         </p>
                                     </div>
                                 </div>
@@ -286,7 +286,7 @@ export default function DashboardPage() {
                                     </div>
                                     <div className="ml-3">
                                         <p className="text-sm text-green-700">
-                                            การจองล่าสุด <span className="font-bold">"{recentBookings[0].title}"</span> ได้รับการอนุมัติแล้ว!
+                                            การจองล่าสุด <span className="font-bold">&quot;{recentBookings[0].title}&quot;</span> ได้รับการอนุมัติแล้ว!
                                         </p>
                                     </div>
                                 </div>
@@ -313,8 +313,8 @@ export default function DashboardPage() {
                                         <div
                                             key={room.room_id}
                                             className={`relative overflow-hidden rounded-2xl border transition-all duration-300 ${room.is_available
-                                                    ? "bg-gradient-to-br from-white to-green-50 border-green-200 hover:shadow-lg hover:border-green-300"
-                                                    : "bg-gradient-to-br from-white to-red-50 border-red-200 hover:shadow-lg hover:border-red-300"
+                                                ? "bg-gradient-to-br from-white to-green-50 border-green-200 hover:shadow-lg hover:border-green-300"
+                                                : "bg-gradient-to-br from-white to-red-50 border-red-200 hover:shadow-lg hover:border-red-300"
                                                 }`}
                                         >
                                             <div className="p-5">
