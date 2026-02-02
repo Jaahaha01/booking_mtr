@@ -108,11 +108,8 @@ export default function DashboardPage() {
             <div className="bg-gradient-to-r from-blue-600 to-indigo-700 pb-20 pt-10 px-4 sm:px-6 lg:px-8 shadow-lg">
                 <div className="max-w-7xl mx-auto">
                     <h1 className="text-3xl font-bold text-white mb-2">
-                        แดชบอร์ดภาพรวม
+                        ภาพรวมการใช้งาน
                     </h1>
-                    <p className="text-blue-100 text-lg">
-                        สวัสดี! นี่คือสถิติการใช้งานและสถานะห้องประชุมของคุณ
-                    </p>
                 </div>
             </div>
 
@@ -124,7 +121,7 @@ export default function DashboardPage() {
                     <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
                         <div className="flex justify-between items-center">
                             <div>
-                                <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">ยอดจองทั้งหมด</p>
+                                <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">การจองทั้งหมด</p>
                                 <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
                             </div>
                             <div className="p-3 bg-blue-100 rounded-xl">
@@ -175,15 +172,12 @@ export default function DashboardPage() {
                     <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
                         <div className="flex justify-between items-center">
                             <div>
-                                <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">ถูกระงับ/ยกเลิก</p>
+                                <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">ถูกปฏิเสธ</p>
                                 <p className="text-3xl font-bold text-red-600 mt-1">{stats.rejected + stats.cancelled}</p>
                             </div>
                             <div className="p-3 bg-red-100 rounded-xl">
                                 <FaBan className="w-6 h-6 text-red-600" />
                             </div>
-                        </div>
-                        <div className="mt-4 text-xs text-red-500">
-                            {stats.rejected} ปฏิเสธ / {stats.cancelled} ยกเลิกเอง
                         </div>
                     </div>
                 </div>
@@ -304,7 +298,7 @@ export default function DashboardPage() {
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                                         <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                                     </div>
-                                    สถานะห้อง Real-time
+                                    สถานะห้อง
                                 </h3>
                             </div>
                             <div className="p-6">
