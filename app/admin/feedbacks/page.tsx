@@ -65,7 +65,7 @@ export default function AdminFeedbacksPage() {
                                 {/* Comment */}
                                 <div className="flex-1">
                                     <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                        "{item.comment}"
+                                        &quot;{item.comment}&quot;
                                     </p>
                                     {/* Images */}
                                     {item.image_url && (

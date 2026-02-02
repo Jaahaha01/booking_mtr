@@ -59,8 +59,8 @@ export default function AdminDashboardPage() {
     if (!data?.charts) return null;
 
     let chartData = [];
-    let XKey = 'name';
-    let dataKey = 'bookings';
+    const XKey = 'name';
+    const dataKey = 'bookings';
     let color = '#3b82f6'; // blue-500
 
     if (timeFilter === 'monthly') {
@@ -111,8 +111,8 @@ export default function AdminDashboardPage() {
                 key={filter}
                 onClick={() => setTimeFilter(filter)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${timeFilter === filter
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
                   }`}
               >
                 {filter === 'monthly' ? 'รายเดือน' : filter === 'weekly' ? 'รายสัปดาห์' : 'รายวัน'}
