@@ -8,8 +8,8 @@ export async function GET() {
         const feedbacks = await db`
       SELECT f.*, u.fname, u.lname, r.name as room_name, b.title as booking_title
       FROM feedbacks f
-      LEFT JOIN users u ON f.user_id = u.user_id
       LEFT JOIN bookings b ON f.booking_id = b.booking_id
+      LEFT JOIN users u ON b.user_id = u.user_id
       LEFT JOIN rooms r ON b.room_id = r.room_id
       ORDER BY f.created_at DESC
     `;
