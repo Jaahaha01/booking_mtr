@@ -16,7 +16,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [data, setData] = useState<any>(null);
-  const [timeFilter, setTimeFilter] = useState<'monthly' | 'weekly' | 'daily'>('monthly');
+  const [timeFilter, setTimeFilter] = useState<'all' | 'monthly' | 'weekly' | 'daily'>('all');
 
   useEffect(() => {
     const init = async () => {
@@ -63,7 +63,7 @@ export default function AdminDashboardPage() {
     const dataKey = 'bookings';
     let color = '#3b82f6'; // blue-500
 
-    if (timeFilter === 'monthly') {
+    if (timeFilter === 'all' || timeFilter === 'monthly') {
       chartData = data.charts.monthly;
     } else if (timeFilter === 'weekly') {
       chartData = data.charts.weekly;
@@ -106,7 +106,7 @@ export default function AdminDashboardPage() {
             <p className="text-gray-500 mt-1">ภาพรวมสถิติและการใช้งานระบบ</p>
           </div>
           <div className="flex items-center gap-3 bg-white p-1.5 rounded-xl border border-gray-200 shadow-sm">
-            {(['monthly', 'weekly', 'daily'] as const).map((filter) => (
+            {(['all', 'monthly', 'weekly', 'daily'] as const).map((filter) => (
               <button
                 key={filter}
                 onClick={() => setTimeFilter(filter)}
@@ -115,7 +115,7 @@ export default function AdminDashboardPage() {
                   : 'text-gray-600 hover:bg-gray-100'
                   }`}
               >
-                {filter === 'monthly' ? 'รายเดือน' : filter === 'weekly' ? 'รายสัปดาห์' : 'รายวัน'}
+                {filter === 'all' ? 'ทั้งหมด' : filter === 'monthly' ? 'รายเดือน' : filter === 'weekly' ? 'รายสัปดาห์' : 'รายวัน'}
               </button>
             ))}
           </div>

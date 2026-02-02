@@ -82,7 +82,7 @@ export default function AdminSidebar() {
   }, []);
 
   return (
-    <aside className="fixed top-0 left-0 z-40 w-72 h-screen transition-transform -translate-x-full sm:translate-x-0 bg-white border-r border-gray-100 shadow-2xl flex flex-col">
+    <aside className="fixed top-0 left-0 z-40 w-72 h-screen transition-transform transform -translate-x-full sm:translate-x-0 bg-white border-r border-gray-100 shadow-xl flex flex-col">
       {/* Header */}
       <div className="h-20 flex items-center px-8 border-b border-gray-50 bg-gradient-to-r from-blue-600 to-indigo-600">
         <div className="flex items-center gap-3 text-white">
@@ -113,7 +113,7 @@ export default function AdminSidebar() {
       )}
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1 scrollbar-thin scrollbar-thumb-gray-200">
+      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1 scrollbar-thin scrollbar-thumb-gray-200">
         {sidebarLinks
           .filter(link => !(link.href === '/admin/rooms' && user?.role === 'staff'))
           .map((link) => {
@@ -128,7 +128,7 @@ export default function AdminSidebar() {
                 key={link.href}
                 href={link.href}
                 className={`
-                  relative flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-200 group
+                  relative flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group
                   ${isActive
                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 font-medium'
                     : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700 font-medium'
@@ -156,7 +156,9 @@ export default function AdminSidebar() {
           type="button"
           className="flex items-center gap-3 w-full px-4 py-3 text-red-600 rounded-xl hover:bg-red-50 transition-all duration-200 font-medium group"
           onClick={async () => {
-            await fetch('/api/logout', { method: 'POST' });
+            try {
+              await fetch('/api/logout', { method: 'POST' });
+            } catch (e) { }
             window.location.href = '/login';
           }}
         >

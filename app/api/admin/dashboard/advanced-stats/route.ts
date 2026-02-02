@@ -61,11 +61,14 @@ export async function GET() {
         }
 
         // 6. General Counts
+        // Try to safely query users table. Based on error, 'status' might not exist on users table.
+        // It is likely 'verification_status' based on Navbar code.
+        // For rooms, it might be 'is_active' or 'status'.
         const counts = await db`
         SELECT 
             (SELECT COUNT(*) FROM users) as total_users,
             (SELECT COUNT(*) FROM bookings) as total_bookings,
-            (SELECT COUNT(*) FROM users WHERE status = 'pending') as pending_users,
+            (SELECT COUNT(*) FROM users WHERE verification_status = 'pending') as pending_users,
             (SELECT COUNT(*) FROM bookings WHERE status = 'pending') as pending_bookings
     `;
 
