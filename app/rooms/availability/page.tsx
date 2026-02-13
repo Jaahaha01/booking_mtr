@@ -63,6 +63,38 @@ export default function RoomAvailabilityPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const getRoomIcon = (roomName: string) => {
+    if (roomName.includes('ประชุม')) {
+      // Presentation / Meeting Icon
+      return (
+        <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      );
+    } else if (roomName.includes('เรียน')) {
+      // Classroom Icon
+      return (
+        <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+      );
+    } else if (roomName.includes('สำนักงาน') || roomName.includes('Office')) {
+      // Office Icon
+      return (
+        <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      )
+    }
+
+    // Default Icon
+    return (
+      <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    );
+  };
+
   const handleBookClick = (roomId: number) => {
     router.push(`/booking?room_id=${roomId}`);
   };
@@ -142,26 +174,28 @@ export default function RoomAvailabilityPage() {
                 key={room.room_id}
                 className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col"
               >
-                {/* Image Area */}
-                <div className="relative h-48 bg-gray-200 overflow-hidden">
-                  <img
-                    src={room.image}
-                    alt={room.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
+                {/* Icon/Image Area */}
+                <div className="relative h-48 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100">
+                  {/* Dynamic Icon based on Room Name */}
+                  <div className="transform transition-transform duration-500 group-hover:scale-110 text-gray-400">
+                    {getRoomIcon(room.name)}
+                  </div>
+
+                  {/* Availability Badge */}
                   <div className="absolute top-4 right-4 z-10">
                     <span className={`
-                       px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg backdrop-blur-md
+                       px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm
                        ${room.availability === 'ว่าง'
-                        ? 'bg-green-500/90 text-white'
-                        : 'bg-red-500/90 text-white'}
+                        ? 'bg-green-500 text-white'
+                        : 'bg-red-500 text-white'}
                      `}>
                       {room.availability}
                     </span>
                   </div>
+
                   {/* Rating Badge */}
                   <div className="absolute bottom-4 left-4 z-10">
-                    <div className="flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg shadow-sm">
+                    <div className="flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg shadow-sm border border-gray-100">
                       <svg className="w-4 h-4 text-yellow-500 fill-current" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
@@ -192,14 +226,19 @@ export default function RoomAvailabilityPage() {
                       <span>ความจุ {room.capacity} ท่าน</span>
                     </div>
 
-                    {room.currentBooking && (
+                    {/* Current Booking Info (Only show if exists) */}
+                    {room.currentBooking ? (
                       <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-100">
-                        <p className="text-xs text-red-500 font-bold uppercase mb-1">กำลังใช้งาน</p>
-                        <p className="text-sm font-medium text-gray-800 truncate">{room.currentBooking.title}</p>
+                        <p className="text-xs text-red-500 font-bold mb-1">กำลังใช้งาน</p>
+                        <p className="text-sm font-bold text-gray-800 truncate">{room.currentBooking.title}</p>
                         <p className="text-xs text-gray-500 mt-1">
                           ถึงเวลา {new Date(room.currentBooking.end).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
+                    ) : (
+                      // Spacer to keep card height consistent if desired, or remove for auto height.
+                      // Keeping it empty or minimal.
+                      <div className="mt-4 p-3 h-[86px]"> </div>
                     )}
                   </div>
 
