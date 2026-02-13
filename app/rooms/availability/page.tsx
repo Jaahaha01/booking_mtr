@@ -64,33 +64,10 @@ export default function RoomAvailabilityPage() {
   }, []);
 
   const getRoomIcon = (roomName: string) => {
-    if (roomName.includes('ประชุม')) {
-      // Presentation / Meeting Icon
-      return (
-        <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
-      );
-    } else if (roomName.includes('เรียน')) {
-      // Classroom Icon
-      return (
-        <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        </svg>
-      );
-    } else if (roomName.includes('สำนักงาน') || roomName.includes('Office')) {
-      // Office Icon
-      return (
-        <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      )
-    }
-
-    // Default Icon
+    // Single Building Icon for all rooms as requested
     return (
-      <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      <svg className="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
       </svg>
     );
   };
@@ -226,8 +203,8 @@ export default function RoomAvailabilityPage() {
                       <span>ความจุ {room.capacity} ท่าน</span>
                     </div>
 
-                    {/* Current Booking Info (Only show if exists) */}
-                    {room.currentBooking ? (
+                    {/* Current Booking Info (Only show if room is occupied/busy) */}
+                    {room.availability === 'ไม่ว่าง' && room.currentBooking ? (
                       <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-100">
                         <p className="text-xs text-red-500 font-bold mb-1">กำลังใช้งาน</p>
                         <p className="text-sm font-bold text-gray-800 truncate">{room.currentBooking.title}</p>
@@ -236,9 +213,11 @@ export default function RoomAvailabilityPage() {
                         </p>
                       </div>
                     ) : (
-                      // Spacer to keep card height consistent if desired, or remove for auto height.
-                      // Keeping it empty or minimal.
-                      <div className="mt-4 p-3 h-[86px]"> </div>
+                      // Spacer to maintain height if needed, or just standard spacing
+                      <div className="mt-4 p-3 h-[86px] flex items-center justify-center text-sm text-gray-400 border border-transparent">
+                        {/* Optional: Show 'Available' text properly or just keep empty */}
+                        {/* User asked to show 'ว่างอยู่' effectively by NOT showing 'Currently using' */}
+                      </div>
                     )}
                   </div>
 
