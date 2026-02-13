@@ -305,7 +305,13 @@ export async function POST(req: NextRequest) {
 
       // Don't await this, let it run in background
       // Use setImmediate or just fire and forget but ensure import is valid
-      sendPushMessage(bookingInfo.line_user_id, message).catch(console.error);
+      sendPushMessage(bookingInfo.line_user_id, message).then(async () => {
+        // Log notification
+        await db`
+            INSERT INTO notifications (user_id, booking_id, type, message, status, scheduled_at)
+            VALUES (${bookingInfo.user_id}, ${bookingInfo.booking_id}, 'booking_created', ${message}, 'sent', NULL)
+          `;
+      }).catch(console.error);
     }
 
     return response;

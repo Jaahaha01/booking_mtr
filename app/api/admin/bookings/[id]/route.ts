@@ -89,10 +89,15 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
               `ห้อง: ${booking.room_name}\n` +
               `หัวข้อ: ${booking.title}\n` +
               `ผู้จอง: ${booking.fname} ${booking.lname}\n` +
-              `ยืนยันโดย: ${user.fname} ${user.lname} (ID: ${userId})\n` +
+              `ยืนยันโดย: ${user.fname} ${user.lname}\n` +
               `เวลา: ${dateStr} เวลา ${timeRange}`;
 
-            sendPushMessage(userRes[0].line_user_id, message).catch(console.error);
+            sendPushMessage(userRes[0].line_user_id, message).then(async () => {
+              await db`
+                    INSERT INTO notifications (user_id, booking_id, type, message, status, scheduled_at)
+                    VALUES (${booking.user_id}, ${bookingId}, 'booking_approved', ${message}, 'sent', NULL)
+                `;
+            }).catch(console.error);
           }
         } catch (e) { console.error('Error sending line msg', e) }
       }
@@ -107,7 +112,12 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
           if (userRes[0]?.line_user_id) {
             const { sendPushMessage } = await import('@/lib/line');
             const message = `❌ การจองห้องประชุมถูกปฏิเสธ/ยกเลิก\nหัวข้อ: ${booking.title}`;
-            sendPushMessage(userRes[0].line_user_id, message).catch(console.error);
+            sendPushMessage(userRes[0].line_user_id, message).then(async () => {
+              await db`
+                    INSERT INTO notifications (user_id, booking_id, type, message, status, scheduled_at)
+                    VALUES (${booking.user_id}, ${bookingId}, 'booking_cancelled', ${message}, 'sent', NULL)
+                `;
+            }).catch(console.error);
           }
         } catch (e) { console.error('Error sending line msg', e) }
       }
