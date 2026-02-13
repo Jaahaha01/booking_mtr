@@ -36,7 +36,17 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     }
 
     // ดึงข้อมูลการจองเพื่อส่งแจ้งเตือน
-    const existingBookings = await db`SELECT user_id, title, start, "end", room_id FROM bookings WHERE booking_id = ${bookingId}`;
+    // ดึงข้อมูลการจองเพื่อส่งแจ้งเตือน (เพิ่ม room_name, user details)
+    const existingBookings = await db`
+      SELECT 
+        b.booking_id, b.user_id, b.title, b.start, b."end", b.room_id,
+        r.name as room_name,
+        u.fname, u.lname
+      FROM bookings b
+      JOIN rooms r ON b.room_id = r.room_id
+      JOIN users u ON b.user_id = u.user_id
+      WHERE b.booking_id = ${bookingId}
+    `;
     const booking = existingBookings[0];
 
     // อัปเดตสถานะและ admin/staff ที่ยืนยันหรือยกเลิก
@@ -54,12 +64,34 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
             const { sendPushMessage } = await import('@/lib/line');
             // Start is likely a Date object or timestamp from DB. Ensure it's treated as UTC then converted to BKK if needed, 
             // OR if it's already a timestamptz, just force formatting.
-            const startStr = new Date(booking.start).toLocaleString('th-TH', {
-              timeZone: 'Asia/Bangkok',
-              year: 'numeric', month: 'long', day: 'numeric',
-              hour: '2-digit', minute: '2-digit', hour12: false
-            });
-            const message = `✅ การจองห้องประชุมได้รับการอนุมัติ\nหัวข้อ: ${booking.title}\nเวลา: ${startStr}`;
+            // Format Start Time
+            const dStart = new Date(booking.start);
+            const day = dStart.getUTCDate();
+            const month = dStart.getUTCMonth();
+            const year = dStart.getUTCFullYear();
+            const hour = dStart.getUTCHours();
+            const minute = dStart.getUTCMinutes();
+
+            // Format End Time
+            const dEnd = new Date(booking.end);
+            const endHour = dEnd.getUTCHours();
+            const endMinute = dEnd.getUTCMinutes();
+
+            const thaiMonths = [
+              'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+              'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+            ];
+
+            const dateStr = `${day} ${thaiMonths[month]} ${year + 543}`;
+            const timeRange = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} - ${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+
+            const message = `✅ การจองห้องประชุมได้รับการอนุมัติ\n` +
+              `ห้อง: ${booking.room_name}\n` +
+              `หัวข้อ: ${booking.title}\n` +
+              `ผู้จอง: ${booking.fname} ${booking.lname}\n` +
+              `ยืนยันโดย: ${user.fname} ${user.lname} (ID: ${userId})\n` +
+              `เวลา: ${dateStr} เวลา ${timeRange}`;
+
             sendPushMessage(userRes[0].line_user_id, message).catch(console.error);
           }
         } catch (e) { console.error('Error sending line msg', e) }
