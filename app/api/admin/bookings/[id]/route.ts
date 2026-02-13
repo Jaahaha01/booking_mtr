@@ -52,7 +52,13 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
           const userRes = await db`SELECT line_user_id FROM users WHERE user_id = ${booking.user_id}`;
           if (userRes[0]?.line_user_id) {
             const { sendPushMessage } = await import('@/lib/line');
-            const startStr = new Date(booking.start).toLocaleString('th-TH');
+            // Start is likely a Date object or timestamp from DB. Ensure it's treated as UTC then converted to BKK if needed, 
+            // OR if it's already a timestamptz, just force formatting.
+            const startStr = new Date(booking.start).toLocaleString('th-TH', {
+              timeZone: 'Asia/Bangkok',
+              year: 'numeric', month: 'long', day: 'numeric',
+              hour: '2-digit', minute: '2-digit', hour12: false
+            });
             const message = `✅ การจองห้องประชุมได้รับการอนุมัติ\nหัวข้อ: ${booking.title}\nเวลา: ${startStr}`;
             sendPushMessage(userRes[0].line_user_id, message).catch(console.error);
           }

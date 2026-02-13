@@ -113,8 +113,25 @@ export async function POST(req: NextRequest) {
       if (d.length === 16) d += ':00';
       return d;
     }
+    // ใช้เพื่อแสดงใน LINE (แต่ข้อมูลจริงใน DB เก็บยังไงขึ้นอยู่กับ setup)
+    // ตรงนี้น่าจะรับค่ามาเป็น string แบบ local time อยู่แล้ว (จาก Frontend)
+    // เช่น "2026-02-15T13:00" -> "2026-02-15 13:00:00"
     const start = toDateTimeString(rawStart);
     const end = toDateTimeString(rawEnd);
+
+    // Helper for beautiful Thai date in notification
+    const formatThaiDate = (dateStr: string) => {
+      const date = new Date(dateStr);
+      return date.toLocaleString('th-TH', {
+        timeZone: 'Asia/Bangkok',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    };
     console.log('DEBUG booking overlap check:', { start, end });
 
     // ตรวจสอบข้อมูลที่จำเป็น
@@ -249,7 +266,7 @@ export async function POST(req: NextRequest) {
       const message = `แจ้งเตือนการจองห้องประชุม\n\n` +
         `คุณได้ส่งคำขอจองห้อง: ${bookingInfo.room_name}\n` +
         `หัวข้อ: ${bookingInfo.title}\n` +
-        `เวลา: ${toDateTimeString(rawStart)} - ${toDateTimeString(rawEnd)}\n\n` +
+        `เวลา: ${formatThaiDate(rawStart)} - ${formatThaiDate(rawEnd)}\n\n` +
         `สถานะ: 🟡 รออนุมัติ\n` +
         `กรุณารอการตรวจสอบจากเจ้าหน้าที่`;
 
