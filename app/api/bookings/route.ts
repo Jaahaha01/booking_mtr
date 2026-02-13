@@ -120,17 +120,50 @@ export async function POST(req: NextRequest) {
     const end = toDateTimeString(rawEnd);
 
     // Helper for beautiful Thai date in notification
+    // Assuming 'dateStr' comes in as 'YYYY-MM-DD HH:mm:ss' (local time) OR 'YYYY-MM-DDTHH:mm...'
+    // If it is 'YYYY-MM-DD HH:mm:ss', new Date() might treat it as local time or UTC depending on environment.
+    // Given the previous code manually stripped 'T', let's be careful.
     const formatThaiDate = (dateStr: string) => {
-      const date = new Date(dateStr);
-      return date.toLocaleString('th-TH', {
-        timeZone: 'Asia/Bangkok',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
+      // If dateStr is "2026-02-14 08:00:00", new Date() in Node might interpret as local system time.
+      // But Vercel server time is UTC. So 08:00 becomes 08:00 UTC.
+      // Then .toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }) converts 08:00 UTC -> 15:00 BKK (+7).
+      // ERROR: The user input "08:00" IS ALREADY BKK TIME (conceptually).
+
+      // FIX: We must tell Date that this string IS ALREADY offset +07:00 if it lacks offset.
+      // OR better, since we know dateStr is the raw input from frontend (likely with T),
+      // let's look at rawStart/rawEnd again.
+
+      let d = new Date(dateStr);
+      // Check if d is valid
+      if (isNaN(d.getTime())) return dateStr;
+
+      // If the input was "2026-02-14T08:00", Vercel (UTCEnv) sees 08:00 UTC.
+      // Displaying this as BKK (+7) makes it 15:00. This is WRONG if user meant 08:00 BKK.
+
+      // If frontend sends "2026-02-14T08:00" measuring Local Time... 
+      // We should treat "08:00" as the intended display time.
+
+      // Quick Fix: Format the date using the UTC components directly to avoid timezone shifting,
+      // effectively treating the input date as "Neutral/Floating" time which is what we want to display.
+
+      const year = d.getFullYear(); // e.g. 2026
+      const month = d.getMonth(); // 0-11
+      const day = d.getDate();
+      const hour = d.getHours();
+      const minute = d.getMinutes();
+
+      // This Date object 'd' is created from input. If input was '...T08:00', 
+      // d.getHours() is 8 (in local env) or 8 (in UTC env if ISO string).
+      // Wait, if environment is UTC, new Date('...T08:00') -> 08:00 UTC.
+
+      // We want to format it as Thai Date strings manually to preserve the numbers.
+      const thaiMonths = [
+        'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+        'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+      ];
+
+      // Add 543 for Thai year
+      return `${day} ${thaiMonths[month]} ${year + 543} เวลา ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     };
     console.log('DEBUG booking overlap check:', { start, end });
 
