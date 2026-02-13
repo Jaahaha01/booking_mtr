@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { cookies } from 'next/headers';
+import { sendPushMessage } from "@/lib/line";
 
 export const dynamic = 'force-dynamic';
 
@@ -37,16 +38,16 @@ export async function GET() {
     `;
 
     const events = rows.map((b: any) => ({
-  booking_id: b.booking_id,
+      booking_id: b.booking_id,
       title: b.title,
       start: b.start,
       end: b.end,
       status: b.status,
       attendees: b.attendees,
       notes: b.notes,
-  room_name: b.room_name,
-  room_number: b.room_number,
-  room_capacity: b.capacity,
+      room_name: b.room_name,
+      room_number: b.room_number,
+      room_capacity: b.capacity,
       user: {
         username: b.username,
         firstname: b.fname,
@@ -179,7 +180,7 @@ export async function POST(req: NextRequest) {
     // ตรวจสอบการจองซ้อนกับตารางเรียน
     // แปลง start/end เป็นวันและเวลา
     const bookingDate = new Date(start);
-    const daysOfWeek = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+    const daysOfWeek = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
     const bookingDay = daysOfWeek[bookingDate.getDay()];
     let bookingStartTime = start.substring(11, 19); // "HH:mm:ss"
     let bookingEndTime = end.substring(11, 19);
@@ -208,7 +209,7 @@ export async function POST(req: NextRequest) {
     // Add +07 offset for Thailand time when saving to DB to ensure TIMESTAMPTZ is correct
     const dbStart = `${start}+07`;
     const dbEnd = `${end}+07`;
-    
+
     const result = await db`
       INSERT INTO bookings (title, room_id, user_id, start, "end", status, attendees, notes)
       VALUES (${title}, ${room_id}, ${userId}, ${dbStart}, ${dbEnd}, 'pending', ${attendees}, ${notes})
@@ -229,17 +230,35 @@ export async function POST(req: NextRequest) {
         r.capacity,
         u.username,
         u.fname,
-        u.lname
+        u.lname,
+        u.line_user_id
       FROM bookings b
       JOIN rooms r ON b.room_id = r.room_id
       JOIN users u ON b.user_id = u.user_id
       WHERE b.booking_id = ${result[0].booking_id}
     `;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: 'ส่งคำขอจองห้องประชุมสำเร็จ กรุณารอการอนุมัติจากเจ้าหน้าที่',
       booking: newBooking[0]
     });
+
+    // Send LINE Notification
+    if (newBooking[0]?.line_user_id) {
+      const bookingInfo = newBooking[0];
+      const message = `แจ้งเตือนการจองห้องประชุม\n\n` +
+        `คุณได้ส่งคำขอจองห้อง: ${bookingInfo.room_name}\n` +
+        `หัวข้อ: ${bookingInfo.title}\n` +
+        `เวลา: ${toDateTimeString(rawStart)} - ${toDateTimeString(rawEnd)}\n\n` +
+        `สถานะ: 🟡 รออนุมัติ\n` +
+        `กรุณารอการตรวจสอบจากเจ้าหน้าที่`;
+
+      // Don't await this, let it run in background
+      // Use setImmediate or just fire and forget but ensure import is valid
+      sendPushMessage(bookingInfo.line_user_id, message).catch(console.error);
+    }
+
+    return response;
 
   } catch (error) {
     console.error('Error creating booking:', error);

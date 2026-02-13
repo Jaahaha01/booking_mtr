@@ -13,32 +13,32 @@ export async function GET() {
         GROUP BY r.room_id
     `;
 
-        // 2. Get Booking Trends (Last 7 days, or generic monthly - let's do monthly by default for the graph)
-        // We'll fetch last 6 months
+        // 2. Get Booking Trends (Last 6 months)
+        // Use Asia/Bangkok timezone
         const monthlyStats = await db`
-        SELECT TO_CHAR(start, 'YYYY-MM') as name, COUNT(*) as bookings
+        SELECT TO_CHAR(start AT TIME ZONE 'Asia/Bangkok', 'YYYY-MM') as name, COUNT(*) as bookings
         FROM bookings
         WHERE status = 'confirmed'
-        GROUP BY TO_CHAR(start, 'YYYY-MM')
+        GROUP BY TO_CHAR(start AT TIME ZONE 'Asia/Bangkok', 'YYYY-MM')
         ORDER BY name DESC
         LIMIT 6
     `;
 
         // 3. Weekly Stats (Last 7 days)
         const weeklyStats = await db`
-        SELECT TO_CHAR(start, 'Dy') as name, COUNT(*) as bookings
+        SELECT TO_CHAR(start AT TIME ZONE 'Asia/Bangkok', 'Dy') as name, COUNT(*) as bookings
         FROM bookings
         WHERE status = 'confirmed' AND start > NOW() - INTERVAL '7 days'
-        GROUP BY TO_CHAR(start, 'Dy'), DATE(start)
-        ORDER BY DATE(start)
+        GROUP BY TO_CHAR(start AT TIME ZONE 'Asia/Bangkok', 'Dy'), DATE(start AT TIME ZONE 'Asia/Bangkok')
+        ORDER BY DATE(start AT TIME ZONE 'Asia/Bangkok')
     `;
 
         // 4. Daily Breakdown (Today's hours distribution)
         const dailyStats = await db`
-        SELECT EXTRACT(HOUR FROM start) as hour, COUNT(*) as bookings
+        SELECT EXTRACT(HOUR FROM start AT TIME ZONE 'Asia/Bangkok') as hour, COUNT(*) as bookings
         FROM bookings
-        WHERE status = 'confirmed' AND DATE(start) = CURRENT_DATE
-        GROUP BY EXTRACT(HOUR FROM start)
+        WHERE status = 'confirmed' AND DATE(start AT TIME ZONE 'Asia/Bangkok') = DATE(NOW() AT TIME ZONE 'Asia/Bangkok')
+        GROUP BY EXTRACT(HOUR FROM start AT TIME ZONE 'Asia/Bangkok')
         ORDER BY hour
     `;
 
@@ -61,9 +61,6 @@ export async function GET() {
         }
 
         // 6. General Counts
-        // Try to safely query users table. Based on error, 'status' might not exist on users table.
-        // It is likely 'verification_status' based on Navbar code.
-        // For rooms, it might be 'is_active' or 'status'.
         const counts = await db`
         SELECT 
             (SELECT COUNT(*) FROM users) as total_users,
