@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
       // OR better, since we know dateStr is the raw input from frontend (likely with T),
       // let's look at rawStart/rawEnd again.
 
-      let d = new Date(dateStr);
+      const d = new Date(dateStr);
       // Check if d is valid
       if (isNaN(d.getTime())) return dateStr;
 
