@@ -23,7 +23,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     }
 
     // ตรวจสอบสิทธิ์ admin หรือ staff
-    const userRows = await db`SELECT role FROM users WHERE user_id = ${userId}`;
+    const userRows = await db`SELECT role, fname, lname FROM users WHERE user_id = ${userId}`;
     const user = userRows[0];
 
     if (!user || (user.role !== "admin" && user.role !== "staff")) {
@@ -65,25 +65,45 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
             // Start is likely a Date object or timestamp from DB. Ensure it's treated as UTC then converted to BKK if needed, 
             // OR if it's already a timestamptz, just force formatting.
             // Format Start Time
+            // Format Start Time using toLocaleString to get correct BKK time
+            const formatOptions: Intl.DateTimeFormatOptions = {
+              timeZone: 'Asia/Bangkok',
+              year: 'numeric', month: 'long', day: 'numeric',
+              hour: '2-digit', minute: '2-digit', hour12: false
+            };
+
+            // Note: date.toLocaleString returns a string like "17 กุมภาพันธ์ 2569 13:00"
+            // We want to separate Date and Time slightly or just use the string.
+            // Let's format manually using the parts to ensure we get "HH:mm" exactly.
+
+            // To be 100% safe about timezone math, let's use toLocaleString into parts
             const dStart = new Date(booking.start);
-            const day = dStart.getUTCDate();
-            const month = dStart.getUTCMonth();
-            const year = dStart.getUTCFullYear();
-            const hour = dStart.getUTCHours();
-            const minute = dStart.getUTCMinutes();
-
-            // Format End Time
             const dEnd = new Date(booking.end);
-            const endHour = dEnd.getUTCHours();
-            const endMinute = dEnd.getUTCMinutes();
 
-            const thaiMonths = [
-              'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-              'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-            ];
+            const startStr = dStart.toLocaleString('th-TH', formatOptions);
+            // result: "17 กุมภาพันธ์ 2569 13:00"
 
-            const dateStr = `${day} ${thaiMonths[month]} ${year + 543}`;
-            const timeRange = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} - ${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+            // Extract time part from End date
+            const endTimeStr = dEnd.toLocaleString('th-TH', {
+              timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hour12: false
+            });
+
+            // We want: "17 กุมภาพันธ์ 2569 เวลา 13:00 - 17:00"
+            // Start string already has "DD Month YYYY HH:mm"
+            // Let's split it? Or just construct two strings.
+
+            const startDatePart = dStart.toLocaleString('th-TH', {
+              timeZone: 'Asia/Bangkok', day: 'numeric', month: 'long', year: 'numeric'
+            });
+            const startTimePart = dStart.toLocaleString('th-TH', {
+              timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hour12: false
+            });
+            const endTimePart = dEnd.toLocaleString('th-TH', {
+              timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hour12: false
+            });
+
+            const dateStr = startDatePart;
+            const timeRange = `${startTimePart} - ${endTimePart}`;
 
             const message = `✅ การจองห้องประชุมได้รับการอนุมัติ\n` +
               `ห้อง: ${booking.room_name}\n` +
