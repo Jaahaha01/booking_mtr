@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 				let reply = `👥 สำหรับ <b>${requiredCapacity} ท่าน</b> ขอแนะนำ:\n\n`;
 				reply += `⭐ <b>${best.name}</b> (รองรับ ${best.capacity} คน)`;
 				if (best.equipment || best.description) {
-					reply += `\n🖥️ อุปกรณ์: ${best.equipment || best.description}`;
+					reply += `\n ${best.equipment || best.description}`;
 				}
 				if (matchingRooms.length > 1) {
 					reply += `\n\n📌 ห้องอื่นที่รองรับได้:\n`;
