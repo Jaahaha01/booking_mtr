@@ -91,6 +91,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // รีเซ็ต sequence ให้ตรงกับ max room_id เพื่อป้องกัน duplicate key
+    await db`SELECT setval(pg_get_serial_sequence('rooms', 'room_id'), COALESCE((SELECT MAX(room_id) FROM rooms), 0) + 1, false)`;
+
     // สร้างห้องใหม่
     const result = await db`
       INSERT INTO rooms (name, room_number, capacity, description, status)
