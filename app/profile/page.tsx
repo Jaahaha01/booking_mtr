@@ -27,6 +27,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [showVerificationPopup, setShowVerificationPopup] = useState(false);
+  const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
     fetch('/api/profile')
@@ -407,7 +408,7 @@ export default function ProfilePage() {
                       </div>
                       {/* LINE QR Code */}
                       <div className="shrink-0">
-                        <div className="bg-white border-2 border-green-100 rounded-xl p-2 shadow-sm">
+                        <div className="bg-white border-2 border-green-100 rounded-xl p-2 shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowQR(true)}>
                           <Image
                             src="https://res.cloudinary.com/dhnyyvwoa/image/upload/v1769012997/booking_app_uploads/hnjntiow7asbdytdcfqy.png"
                             alt="LINE QR Code - แอดเพื่อนเพื่อรับแจ้งเตือน"
@@ -415,7 +416,7 @@ export default function ProfilePage() {
                             height={120}
                             className="rounded-lg"
                           />
-                          <p className="text-[10px] text-center text-gray-500 mt-1 font-medium">สแกนเพื่อแอดเพื่อน</p>
+                          <p className="text-[10px] text-center text-gray-500 mt-1 font-medium">กดเพื่อขยาย</p>
                         </div>
                       </div>
                     </div>
@@ -535,6 +536,45 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* QR Code Lightbox Modal */}
+      {showQR && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowQR(false)}>
+          <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-sm w-full relative" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowQR(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-gray-800 mb-1">แอดเพื่อน LINE</h3>
+              <p className="text-sm text-gray-500 mb-4">สแกน QR Code เพื่อรับแจ้งเตือนการจอง</p>
+              <Image
+                src="https://res.cloudinary.com/dhnyyvwoa/image/upload/v1769012997/booking_app_uploads/hnjntiow7asbdytdcfqy.png"
+                alt="LINE QR Code"
+                width={280}
+                height={280}
+                className="rounded-xl mx-auto"
+              />
+              <p className="text-xs text-gray-400 mt-3">Line ID: @768hlgsv</p>
+              <a
+                href="https://lin.ee/QNOoIX4"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-2.5 rounded-xl font-medium transition-colors text-sm"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 5.81 2 10.5c0 2.92 1.94 5.47 4.83 6.95l-.72 2.62c-.06.22.01.45.18.6.1.09.23.14.36.14.09 0 .18-.02.26-.07L10.5 18.8c.49.05.99.07 1.5.07 5.52 0 10-3.81 10-8.5S17.52 2 12 2z" />
+                </svg>
+                เปิดลิงก์แอดเพื่อน
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div >
   );
 }
