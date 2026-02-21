@@ -90,14 +90,17 @@ export async function POST(request: NextRequest) {
 
                 if (table === 'users') {
                     // ไม่ลบ user ปัจจุบัน (admin ที่กำลัง restore)
-                    // ลบเฉพาะ user ที่ไม่ใช่ admin คนนี้
                     await db`DELETE FROM users WHERE user_id != ${parseInt(adminId)}`;
+
+                    // ใช้ placeholder password สำหรับ user ที่ถูกกู้คืน (เนื่องจาก backup ไม่เก็บ password)
+                    // bcrypt hash ของ 'resetme123' — ผู้ใช้ต้องเปลี่ยนรหัสผ่านใหม่
+                    const placeholderPassword = '$2b$10$placeholder000000000000000000000000000000000000000';
 
                     for (const row of data) {
                         if (String(row.user_id) === String(adminId)) continue; // ข้าม admin ปัจจุบัน
                         await db`
-              INSERT INTO users (user_id, username, email, phone, fname, lname, identity_card, address, organization, verification_status, role, image, created_at, updated_at)
-              VALUES (${row.user_id}, ${row.username}, ${row.email}, ${row.phone || null}, ${row.fname}, ${row.lname}, ${row.identity_card || null}, ${row.address || null}, ${row.organization || null}, ${row.verification_status || null}, ${row.role || 'user'}, ${row.image || null}, ${row.created_at || new Date().toISOString()}, ${row.updated_at || new Date().toISOString()})
+              INSERT INTO users (user_id, username, password, email, phone, fname, lname, identity_card, address, organization, verification_status, role, image, created_at, updated_at)
+              VALUES (${row.user_id}, ${row.username}, ${placeholderPassword}, ${row.email}, ${row.phone || null}, ${row.fname}, ${row.lname}, ${row.identity_card || null}, ${row.address || null}, ${row.organization || null}, ${row.verification_status || null}, ${row.role || 'user'}, ${row.image || null}, ${row.created_at || new Date().toISOString()}, ${row.updated_at || new Date().toISOString()})
               ON CONFLICT (user_id) DO UPDATE SET
                 username = EXCLUDED.username,
                 email = EXCLUDED.email,
@@ -109,7 +112,7 @@ export async function POST(request: NextRequest) {
                 image = EXCLUDED.image
             `;
                     }
-                    results.restored.push({ table: 'users', count: data.length, note: 'ไม่รวม admin ปัจจุบัน, password ไม่ถูกกู้คืน' });
+                    results.restored.push({ table: 'users', count: data.length, note: 'ไม่รวม admin ปัจจุบัน, ผู้ใช้ต้องตั้งรหัสผ่านใหม่' });
                 }
 
                 if (table === 'room_schedules') {
@@ -155,8 +158,8 @@ export async function POST(request: NextRequest) {
 
                     for (const row of data) {
                         await db`
-              INSERT INTO feedbacks (feedback_id, booking_id, user_id, room_id, rating, comment, image_url, created_at)
-              VALUES (${row.feedback_id}, ${row.booking_id || null}, ${row.user_id}, ${row.room_id || null}, ${row.rating}, ${row.comment || null}, ${row.image_url || null}, ${row.created_at || new Date().toISOString()})
+              INSERT INTO feedbacks (feedback_id, booking_id, rating, comment, image_url, created_at)
+              VALUES (${row.feedback_id}, ${row.booking_id || null}, ${row.rating}, ${row.comment || null}, ${row.image_url || null}, ${row.created_at || new Date().toISOString()})
               ON CONFLICT (feedback_id) DO UPDATE SET
                 rating = EXCLUDED.rating,
                 comment = EXCLUDED.comment
