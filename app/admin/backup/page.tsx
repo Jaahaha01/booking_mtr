@@ -37,13 +37,10 @@ export default function AdminBackupPage() {
     const [selectedTables, setSelectedTables] = useState<string[]>(['rooms', 'users', 'room_schedules', 'bookings', 'feedbacks']);
     const [downloading, setDownloading] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterKeyword, setFilterKeyword] = useState<string>('all');
     const [deleting, setDeleting] = useState<number | null>(null);
 
-    // กรอง backup logs ตามคำค้นหาและ keyword
+    // กรอง backup logs ตามคำค้นหา
     const filteredLogs = backupLogs.filter((log) => {
-        const matchesKeyword = filterKeyword === 'all' || log.file_name.includes(`_${filterKeyword}_`);
-        if (!matchesKeyword) return false;
         if (!searchTerm.trim()) return true;
         const term = searchTerm.toLowerCase();
         const dateStr = new Date(log.created_at).toLocaleDateString('th-TH');
@@ -81,15 +78,10 @@ export default function AdminBackupPage() {
         init();
     }, [router]);
 
-    const handleBackup = async (type: 'database' | 'full') => {
-        const typeLabels: Record<string, string> = {
-            database: 'ฐานข้อมูล',
-            full: 'ข้อมูลทั้งหมด',
-        };
-
+    const handleBackup = async () => {
         const result = await Swal.fire({
-            title: `สำรอง${typeLabels[type]}`,
-            text: `คุณต้องการสำรอง${typeLabels[type]}หรือไม่?`,
+            title: 'สำรองข้อมูลระบบทั้งหมด',
+            text: 'คุณต้องการสำรองข้อมูลระบบทั้งหมดหรือไม่?',
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'สำรองข้อมูล',
@@ -103,12 +95,12 @@ export default function AdminBackupPage() {
 
         if (!result.isConfirmed) return;
 
-        setBackingUp(type);
+        setBackingUp('full');
         try {
             const res = await fetch('/api/admin/backup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type }),
+                body: JSON.stringify({ type: 'full' }),
             });
 
             if (!res.ok) throw new Error('Backup failed');
@@ -119,7 +111,7 @@ export default function AdminBackupPage() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = data.fileName || `backup_${type}.json`;
+            a.download = data.fileName || 'backup_full.json';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -387,86 +379,52 @@ export default function AdminBackupPage() {
                     </div>
                 </div>
 
-                {/* Backup Options */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-
-                    {/* สำรองฐานข้อมูล */}
-                    <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 overflow-hidden group hover:border-indigo-500/30 transition-all duration-300">
-                        <div className="h-1.5 bg-gradient-to-r from-indigo-500 to-indigo-600"></div>
-                        <div className="p-6">
-                            <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-5 border border-indigo-500/20 group-hover:scale-110 transition-transform duration-300">
-                                <svg className="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-                                </svg>
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2">สำรองฐานข้อมูล</h3>
-                            <p className="text-gray-400 text-sm mb-4 leading-relaxed">
-                                สำรองเฉพาะข้อมูลในฐานข้อมูล (ตารางทั้งหมด)
-                            </p>
-                            <div className="space-y-2 mb-6">
-                                {['ข้อมูลผู้ใช้ (รวมรหัสผ่าน)', 'ข้อมูลการจองทั้งหมด', 'ข้อมูลห้องประชุมและตารางเรียน', 'ข้อมูลความคิดเห็น'].map((item) => (
-                                    <div key={item} className="flex items-center gap-2 text-sm text-gray-500">
-                                        <svg className="w-4 h-4 text-indigo-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                        {item}
-                                    </div>
-                                ))}
-                            </div>
-                            <button
-                                onClick={() => handleBackup('database')}
-                                disabled={backingUp !== null}
-                                className="w-full py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {backingUp === 'database' ? (
-                                    <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div> กำลังสำรอง...</>
-                                ) : (
-                                    <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> สำรองฐานข้อมูล</>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-
-
-                    {/* สำรองข้อมูลทั้งหมด */}
-                    <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 overflow-hidden group hover:border-emerald-500/30 transition-all duration-300 relative">
+                {/* Backup Option */}
+                <div className="mb-8">
+                    <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
                         <div className="h-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600"></div>
-                        <div className="absolute top-5 right-4">
-                            <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/30">แนะนำ</span>
-                        </div>
                         <div className="p-6">
-                            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-5 border border-emerald-500/20 group-hover:scale-110 transition-transform duration-300">
-                                <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                </svg>
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2">สำรองข้อมูลทั้งหมด</h3>
-                            <p className="text-gray-400 text-sm mb-4 leading-relaxed">
-                                รวมฐานข้อมูล + ข้อมูลระบบครบถ้วน เหมาะสำหรับสำรองประจำ
-                            </p>
-                            <div className="space-y-2 mb-6">
-                                {[
-                                    'ข้อมูลผู้ใช้ทั้งหมด (รวมรหัสผ่าน)',
-                                    'ข้อมูลการจอง, ห้องประชุม, ตารางเรียน',
-                                    'ข้อมูลความคิดเห็น (Feedbacks)',
-                                    'สถิติการจอง (ยืนยัน, รอ, ยกเลิก)',
-                                    'การตั้งค่าห้องประชุม + ข้อมูลเซิร์ฟเวอร์',
-                                ].map((item) => (
-                                    <div key={item} className="flex items-center gap-2 text-sm text-gray-500">
-                                        <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                        {item}
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-4 mb-3">
+                                        <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                                            <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white">สำรองข้อมูลระบบทั้งหมด</h3>
+                                            <p className="text-gray-400 text-sm mt-1">รวมข้อมูลฐานข้อมูล + ข้อมูลระบบครบถ้วน พร้อมกู้คืนได้ทันที</p>
+                                        </div>
                                     </div>
-                                ))}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 ml-0 sm:ml-[4.5rem]">
+                                        {[
+                                            'ข้อมูลผู้ใช้ทั้งหมด (รวมรหัสผ่าน)',
+                                            'ข้อมูลการจองทั้งหมด',
+                                            'ห้องประชุม + ตารางเรียน',
+                                            'ความคิดเห็น + สถิติระบบ',
+                                        ].map((item) => (
+                                            <div key={item} className="flex items-center gap-2 text-sm text-gray-500">
+                                                <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                                {item}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="sm:w-48 shrink-0">
+                                    <button
+                                        onClick={() => handleBackup()}
+                                        disabled={backingUp !== null}
+                                        className="w-full py-3.5 px-6 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {backingUp ? (
+                                            <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div> กำลังสำรอง...</>
+                                        ) : (
+                                            <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> สำรองข้อมูล</>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
-                            <button
-                                onClick={() => handleBackup('full')}
-                                disabled={backingUp !== null}
-                                className="w-full py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {backingUp === 'full' ? (
-                                    <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div> กำลังสำรอง...</>
-                                ) : (
-                                    <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> สำรองข้อมูลทั้งหมด</>
-                                )}
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -573,7 +531,7 @@ export default function AdminBackupPage() {
                                 ประวัติการสำรองข้อมูล
                                 {backupLogs.length > 0 && (
                                     <span className="text-xs font-normal text-gray-500 ml-1">
-                                        ({filteredLogs.length}{(searchTerm || filterKeyword !== 'all') ? `/${backupLogs.length}` : ''} รายการ)
+                                        ({filteredLogs.length}{searchTerm ? `/${backupLogs.length}` : ''} รายการ)
                                     </span>
                                 )}
                             </h3>
@@ -588,40 +546,7 @@ export default function AdminBackupPage() {
                                 />
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs text-gray-500 font-medium mr-1">ประเภท:</span>
-                            {[
-                                { key: 'all', label: 'ทั้งหมด' },
-                                { key: 'database', label: 'ฐานข้อมูล', color: 'indigo' },
-                                { key: 'full', label: 'ข้อมูลทั้งหมด', color: 'emerald' },
-                            ].map(({ key, label, color }) => (
-                                <button
-                                    key={key}
-                                    onClick={() => setFilterKeyword(key)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${filterKeyword === key
-                                        ? key === 'all'
-                                            ? 'bg-purple-500/15 text-purple-400 border-purple-500/30'
-                                            : key === 'database'
-                                                ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'
-                                                : key === 'system'
-                                                    ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30'
-                                                    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                                        : 'bg-gray-800/50 text-gray-500 border-gray-700 hover:text-gray-300 hover:border-gray-600'
-                                        }`}
-                                >
-                                    {label}
-                                </button>
-                            ))}
-                            {(searchTerm || filterKeyword !== 'all') && (
-                                <button
-                                    onClick={() => { setSearchTerm(''); setFilterKeyword('all'); }}
-                                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700 hover:text-gray-300 transition-all duration-200 flex items-center gap-1.5 ml-auto"
-                                >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                    ล้างตัวกรอง
-                                </button>
-                            )}
-                        </div>
+
                     </div>
 
                     {backupLogs.length > 0 ? (
@@ -720,7 +645,7 @@ export default function AdminBackupPage() {
                                 <h3 className="text-sm font-medium text-gray-300">ไม่พบข้อมูลสำรองที่ตรงกับเงื่อนไข</h3>
                                 <p className="mt-1 text-sm text-gray-600">ลองเปลี่ยนคำค้นหาหรือตัวกรองประเภท</p>
                                 <button
-                                    onClick={() => { setSearchTerm(''); setFilterKeyword('all'); }}
+                                    onClick={() => setSearchTerm('')}
                                     className="mt-3 text-xs text-purple-400 hover:text-purple-300 transition-colors"
                                 >
                                     แสดงทั้งหมด
