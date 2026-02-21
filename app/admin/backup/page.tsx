@@ -16,12 +16,12 @@ interface BackupLog {
     backup_id: number;
     file_name: string;
     file_size: string;
-    file_url: string;
     status: string;
     created_by: number;
     created_at: string;
     fname?: string;
     lname?: string;
+    has_data?: boolean;
 }
 
 export default function AdminBackupPage() {
@@ -35,6 +35,7 @@ export default function AdminBackupPage() {
     const [restoreFile, setRestoreFile] = useState<any>(null);
     const [restoreFileName, setRestoreFileName] = useState('');
     const [selectedTables, setSelectedTables] = useState<string[]>(['rooms', 'users', 'room_schedules', 'bookings', 'feedbacks']);
+    const [downloading, setDownloading] = useState<number | null>(null);
 
     const fetchData = async () => {
         try {
@@ -234,6 +235,32 @@ export default function AdminBackupPage() {
             Swal.fire({ title: 'เกิดข้อผิดพลาด', text: err.message || 'ไม่สามารถกู้คืนข้อมูลได้', icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', background: '#23272b', color: '#e5e7eb' });
         } finally {
             setRestoring(false);
+        }
+    };
+
+    const handleDownloadOld = async (backupId: number, fileName: string) => {
+        setDownloading(backupId);
+        try {
+            const res = await fetch(`/api/admin/backup?id=${backupId}`);
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'ดาวน์โหลดไม่สำเร็จ');
+            }
+            const data = await res.json();
+
+            const blob = new Blob([JSON.stringify(data.backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err: any) {
+            Swal.fire({ title: 'ดาวน์โหลดไม่สำเร็จ', text: err.message, icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', background: '#23272b', color: '#e5e7eb' });
+        } finally {
+            setDownloading(null);
         }
     };
 
@@ -536,6 +563,7 @@ export default function AdminBackupPage() {
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สำรองโดย</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่</th>
+                                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ดาวน์โหลด</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -565,6 +593,24 @@ export default function AdminBackupPage() {
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-500">
                                                 {new Date(log.created_at).toLocaleString('th-TH')}
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                {log.has_data && log.status === 'success' ? (
+                                                    <button
+                                                        onClick={() => handleDownloadOld(log.backup_id, log.file_name)}
+                                                        disabled={downloading !== null}
+                                                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 mx-auto"
+                                                    >
+                                                        {downloading === log.backup_id ? (
+                                                            <div className="w-3 h-3 rounded-full border-2 border-indigo-400/30 border-t-indigo-400 animate-spin"></div>
+                                                        ) : (
+                                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                        )}
+                                                        ดาวน์โหลด
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-gray-700 text-xs">—</span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}

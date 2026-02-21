@@ -16,14 +16,31 @@ async function verifyAdmin() {
     return userId;
 }
 
-// GET: ดึงข้อมูลสรุปของ database + ประวัติการสำรอง
-export async function GET() {
+// GET: ดึงข้อมูลสรุป + ประวัติการสำรอง / ดาวน์โหลด backup เก่า (?id=)
+export async function GET(request: NextRequest) {
     const adminId = await verifyAdmin();
     if (!adminId) {
         return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 });
     }
 
     try {
+        // ถ้ามี ?id= ให้ดึงข้อมูล backup เก่าสำหรับดาวน์โหลด
+        const { searchParams } = new URL(request.url);
+        const backupId = searchParams.get('id');
+
+        if (backupId) {
+            const rows = await db`SELECT file_name, file_url FROM backup_logs WHERE backup_id = ${parseInt(backupId)}`;
+            if (!rows || rows.length === 0 || !rows[0].file_url) {
+                return NextResponse.json({ error: 'ไม่พบข้อมูลสำรอง' }, { status: 404 });
+            }
+            try {
+                const backupContent = JSON.parse(rows[0].file_url);
+                return NextResponse.json({ success: true, backup: backupContent, fileName: rows[0].file_name });
+            } catch {
+                return NextResponse.json({ error: 'ข้อมูลสำรองเสียหาย' }, { status: 500 });
+            }
+        }
+
         // นับจำนวนข้อมูลในแต่ละตาราง
         const [usersCount, bookingsCount, roomsCount, schedulesCount, feedbacksCount] = await Promise.all([
             db`SELECT COUNT(*)::int as count FROM users`,
@@ -33,14 +50,16 @@ export async function GET() {
             db`SELECT COUNT(*)::int as count FROM feedbacks`.catch(() => [{ count: 0 }]),
         ]);
 
-        // ดึงประวัติการสำรองข้อมูลล่าสุด
+        // ดึงประวัติการสำรองข้อมูลล่าสุด (ไม่รวม file_url เพราะข้อมูลใหญ่)
         const backupLogs = await db`
-      SELECT bl.*, u.fname, u.lname 
-      FROM backup_logs bl
-      LEFT JOIN users u ON bl.created_by = u.user_id
-      ORDER BY bl.created_at DESC 
-      LIMIT 20
-    `.catch(() => []);
+            SELECT bl.backup_id, bl.file_name, bl.file_size, bl.status, bl.created_by, bl.created_at,
+                   u.fname, u.lname,
+                   CASE WHEN bl.file_url IS NOT NULL AND bl.file_url != '' THEN true ELSE false END as has_data
+            FROM backup_logs bl
+            LEFT JOIN users u ON bl.created_by = u.user_id
+            ORDER BY bl.created_at DESC 
+            LIMIT 20
+        `.catch(() => []);
 
         return NextResponse.json({
             success: true,
@@ -156,12 +175,12 @@ export async function POST(request: NextRequest) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
         const fileName = `backup_${type}_${timestamp}.json`;
 
-        // บันทึก log ลงตาราง backup_logs
+        // บันทึก log + เก็บเนื้อหา backup ลงตาราง backup_logs เพื่อดาวน์โหลดภายหลัง
         try {
             await db`
-        INSERT INTO backup_logs (file_name, file_size, file_url, status, created_by)
-        VALUES (${fileName}, ${fileSize}, ${''}, ${'success'}, ${parseInt(adminId)})
-      `;
+                INSERT INTO backup_logs (file_name, file_size, file_url, status, created_by)
+                VALUES (${fileName}, ${fileSize}, ${jsonStr}, ${'success'}, ${parseInt(adminId)})
+            `;
         } catch (logError) {
             console.error('Error saving backup log:', logError);
         }
