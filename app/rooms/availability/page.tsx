@@ -35,6 +35,7 @@ export default function RoomAvailabilityPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchAvailability = async () => {
     try {
@@ -116,6 +117,22 @@ export default function RoomAvailabilityPage() {
             </div>
           </div>
 
+          {/* Search Box */}
+          <div className="mt-6">
+            <div className="relative max-w-md">
+              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="ค้นหาชื่อห้องประชุม..."
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white shadow-sm"
+              />
+            </div>
+          </div>
+
           {/* Quick Stats */}
           {availabilityData && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
@@ -146,109 +163,120 @@ export default function RoomAvailabilityPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {availabilityData && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {availabilityData.rooms.map((room) => (
-              <div
-                key={room.room_id}
-                className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col"
-              >
-                {/* Icon/Image Area */}
-                <div className="relative h-48 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100">
-                  {/* Dynamic Icon based on Room Name */}
-                  <div className="transform transition-transform duration-500 group-hover:scale-110 text-gray-400">
-                    {getRoomIcon(room.name)}
-                  </div>
+            {availabilityData.rooms
+              .filter((room) => room.name.toLowerCase().includes(searchTerm.toLowerCase()))
+              .map((room) => (
+                <div
+                  key={room.room_id}
+                  className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col"
+                >
+                  {/* Icon/Image Area */}
+                  <div className="relative h-48 bg-gray-50 flex items-center justify-center overflow-hidden border-b border-gray-100">
+                    {/* Dynamic Icon based on Room Name */}
+                    <div className="transform transition-transform duration-500 group-hover:scale-110 text-gray-400">
+                      {getRoomIcon(room.name)}
+                    </div>
 
-                  {/* Availability Badge */}
-                  <div className="absolute top-4 right-4 z-10">
-                    <span className={`
+                    {/* Availability Badge */}
+                    <div className="absolute top-4 right-4 z-10">
+                      <span className={`
                        px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm
                        ${room.availability === 'ว่าง'
-                        ? 'bg-green-500 text-white'
-                        : 'bg-red-500 text-white'}
+                          ? 'bg-green-500 text-white'
+                          : 'bg-red-500 text-white'}
                      `}>
-                      {room.availability}
-                    </span>
-                  </div>
-
-                  {/* Rating Badge */}
-                  <div className="absolute bottom-4 left-4 z-10">
-                    <div className="flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg shadow-sm border border-gray-100">
-                      <svg className="w-4 h-4 text-yellow-500 fill-current" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      <span className="text-sm font-bold text-gray-800">{room.rating}</span>
-                      <span className="text-xs text-gray-500">({room.review_count} รีวิว)</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content Area */}
-                <div className="p-6 flex-1 flex flex-col">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                      {room.name}
-                    </h3>
-                    <span className="text-sm text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded">
-                      {room.room_number}
-                    </span>
-                  </div>
-
-                  <div className="space-y-3 mb-6 flex-1">
-                    <p className="text-sm text-gray-500 line-clamp-2">{room.description || 'ไม่มีคำอธิบายเพิ่มเติม'}</p>
-
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                      <span>ความจุ {room.capacity} ท่าน</span>
+                        {room.availability}
+                      </span>
                     </div>
 
-                    {/* Current Booking Info (Only show if room is occupied/busy) */}
-                    {room.availability === 'ไม่ว่าง' && room.currentBooking ? (
-                      <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-100">
-                        <p className="text-xs text-red-500 font-bold mb-1">กำลังใช้งาน</p>
-                        <p className="text-sm font-bold text-gray-800 truncate">{room.currentBooking.title}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          ถึงเวลา {new Date(room.currentBooking.end).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
+                    {/* Rating Badge */}
+                    <div className="absolute bottom-4 left-4 z-10">
+                      <div className="flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg shadow-sm border border-gray-100">
+                        <svg className="w-4 h-4 text-yellow-500 fill-current" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <span className="text-sm font-bold text-gray-800">{room.rating}</span>
+                        <span className="text-xs text-gray-500">({room.review_count} รีวิว)</span>
                       </div>
-                    ) : (
-                      // Spacer to maintain height if needed, or just standard spacing
-                      <div className="mt-4 p-3 h-[86px] flex items-center justify-center text-sm text-gray-400 border border-transparent">
-                        {/* Optional: Show 'Available' text properly or just keep empty */}
-                        {/* User asked to show 'ว่างอยู่' effectively by NOT showing 'Currently using' */}
-                      </div>
-                    )}
+                    </div>
                   </div>
 
-                  {/* Footer / Action */}
-                  <div className="mt-auto pt-4 border-t border-gray-50">
-                    <button
-                      onClick={() => handleBookClick(room.room_id)}
-                      disabled={room.availability === 'ไม่ว่าง'}
-                      className={`
+                  {/* Content Area */}
+                  <div className="p-6 flex-1 flex flex-col">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {room.name}
+                      </h3>
+                      <span className="text-sm text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded">
+                        {room.room_number}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 mb-6 flex-1">
+                      <p className="text-sm text-gray-500 line-clamp-2">{room.description || 'ไม่มีคำอธิบายเพิ่มเติม'}</p>
+
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span>ความจุ {room.capacity} ท่าน</span>
+                      </div>
+
+                      {/* Current Booking Info (Only show if room is occupied/busy) */}
+                      {room.availability === 'ไม่ว่าง' && room.currentBooking ? (
+                        <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-100">
+                          <p className="text-xs text-red-500 font-bold mb-1">กำลังใช้งาน</p>
+                          <p className="text-sm font-bold text-gray-800 truncate">{room.currentBooking.title}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            ถึงเวลา {new Date(room.currentBooking.end).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      ) : (
+                        // Spacer to maintain height if needed, or just standard spacing
+                        <div className="mt-4 p-3 h-[86px] flex items-center justify-center text-sm text-gray-400 border border-transparent">
+                          {/* Optional: Show 'Available' text properly or just keep empty */}
+                          {/* User asked to show 'ว่างอยู่' effectively by NOT showing 'Currently using' */}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer / Action */}
+                    <div className="mt-auto pt-4 border-t border-gray-50">
+                      <button
+                        onClick={() => handleBookClick(room.room_id)}
+                        disabled={room.availability === 'ไม่ว่าง'}
+                        className={`
                         w-full py-3 px-4 rounded-xl font-bold shadow-sm transition-all duration-200
                         flex items-center justify-center gap-2
                         ${room.availability === 'ว่าง'
-                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5'
-                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'}
+                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5'
+                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'}
                       `}
-                    >
-                      {room.availability === 'ว่าง' ? (
-                        <>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          จองห้องประชุม
-                        </>
-                      ) : (
-                        'ไม่ว่างชั่วคราว'
-                      )}
-                    </button>
+                      >
+                        {room.availability === 'ว่าง' ? (
+                          <>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            จองห้องประชุม
+                          </>
+                        ) : (
+                          'ไม่ว่างชั่วคราว'
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
+              ))}
+            {availabilityData.rooms.filter((room) => room.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+              <div className="col-span-full text-center py-12">
+                <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <p className="text-gray-500 text-lg font-medium">ไม่พบห้องที่ค้นหา</p>
+                <p className="text-gray-400 text-sm mt-1">ลองค้นหาด้วยชื่ออื่น</p>
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>

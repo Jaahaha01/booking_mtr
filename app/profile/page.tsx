@@ -298,6 +298,21 @@ export default function ProfilePage() {
                     <span className="text-gray-600">{user.organization || 'ไม่ระบุ'}</span>
                   </div>
 
+                  {/* Line User ID */}
+                  <div className="pt-4 mt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-2 mb-1">
+                      <svg className="w-4 h-4 text-green-500" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 5.81 2 10.5c0 2.92 1.94 5.47 4.83 6.95l-.72 2.62c-.06.22.01.45.18.6.1.09.23.14.36.14.09 0 .18-.02.26-.07L10.5 18.8c.49.05.99.07 1.5.07 5.52 0 10-3.81 10-8.5S17.52 2 12 2z" />
+                      </svg>
+                      <span className="text-xs font-medium text-gray-500">Line User ID</span>
+                    </div>
+                    {user.line_user_id ? (
+                      <p className="text-xs text-gray-700 font-mono bg-gray-50 px-3 py-2 rounded-lg break-all">{user.line_user_id}</p>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">ยังไม่ได้ตั้งค่า (แก้ไขโปรไฟล์เพื่อเพิ่ม)</p>
+                    )}
+                  </div>
+
                 </div>
               )}
             </div>
@@ -372,23 +387,38 @@ export default function ProfilePage() {
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Line User ID (สำหรับการแจ้งเตือน)</label>
-                    <div className="flex gap-2">
-                      <input
-                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        value={form.line_user_id || ''}
-                        onChange={e => setForm({ ...form, line_user_id: e.target.value })}
-                        placeholder="เช่น U12345678..."
-                      />
+                    <div className="flex gap-4 items-start">
+                      <div className="flex-1">
+                        <input
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                          value={form.line_user_id || ''}
+                          onChange={e => setForm({ ...form, line_user_id: e.target.value })}
+                          placeholder="เช่น U12345678..."
+                        />
+                        <p className="text-xs text-gray-500 mt-2">
+                          * หากต้องการรับการแจ้งเตือน จำเป็นต้องแอดเพื่อนและขอ ID ก่อน:
+                          <br />
+                          1. แอดเพื่อนผ่านลิงก์: <a href="https://lin.ee/QNOoIX4" target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800">https://lin.ee/QNOoIX4</a> หรือสแกน QR Code ด้านข้าง
+                          <br />
+                          2. พิมพ์คำว่า <strong>&quot;id&quot;</strong> ส่งไปในแชท (Line ID: <strong>@768hlgsv</strong>)
+                          <br />
+                          3. นำรหัสที่บอทตอบกลับมาใส่ในช่องนี้
+                        </p>
+                      </div>
+                      {/* LINE QR Code */}
+                      <div className="shrink-0">
+                        <div className="bg-white border-2 border-green-100 rounded-xl p-2 shadow-sm">
+                          <Image
+                            src="https://res.cloudinary.com/dhnyyvwoa/image/upload/v1769012997/booking_app_uploads/hnjntiow7asbdytdcfqy.png"
+                            alt="LINE QR Code - แอดเพื่อนเพื่อรับแจ้งเตือน"
+                            width={120}
+                            height={120}
+                            className="rounded-lg"
+                          />
+                          <p className="text-[10px] text-center text-gray-500 mt-1 font-medium">สแกนเพื่อแอดเพื่อน</p>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      * หากต้องการรับการแจ้งเตือน จำเป็นต้องแอดเพื่อนและขอ ID ก่อน:
-                      <br />
-                      1. แอดเพื่อนผ่านลิงก์: <a href="https://lin.ee/QNOoIX4" target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800">https://lin.ee/QNOoIX4</a> หรือสแกน QR Code
-                      <br />
-                      2. พิมพ์คำว่า <strong>&quot;id&quot;</strong> ส่งไปในแชท (Line ID: <strong>@768hlgsv</strong>)
-                      <br />
-                      3. นำรหัสที่บอทตอบกลับมาใส่ในช่องนี้
-                    </p>
                   </div>
                 </div>
 
@@ -490,6 +520,14 @@ export default function ProfilePage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-500 mb-1">ชื่อสำนักงาน</label>
                     <p className="text-gray-800">{user.organization || 'ไม่ระบุ'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Line User ID (แจ้งเตือน)</label>
+                    {user.line_user_id ? (
+                      <p className="text-gray-800 font-mono text-sm break-all">{user.line_user_id}</p>
+                    ) : (
+                      <p className="text-gray-400 italic text-sm">ยังไม่ได้ตั้งค่า</p>
+                    )}
                   </div>
                 </div>
               </div>
