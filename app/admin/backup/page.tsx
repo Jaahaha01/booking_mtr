@@ -36,6 +36,15 @@ export default function AdminBackupPage() {
     const [restoreFileName, setRestoreFileName] = useState('');
     const [selectedTables, setSelectedTables] = useState<string[]>(['rooms', 'users', 'room_schedules', 'bookings', 'feedbacks']);
     const [downloading, setDownloading] = useState<number | null>(null);
+    const [searchDate, setSearchDate] = useState('');
+
+    // กรอง backup logs ตามวันที่ที่ค้นหา
+    const filteredLogs = searchDate
+        ? backupLogs.filter((log) => {
+            const logDate = new Date(log.created_at).toLocaleDateString('en-CA'); // YYYY-MM-DD
+            return logDate === searchDate;
+        })
+        : backupLogs;
 
     const fetchData = async () => {
         try {
@@ -549,75 +558,118 @@ export default function AdminBackupPage() {
 
                 {/* Backup History */}
                 <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 p-6 mb-8">
-                    <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-3">
-                        <span className="w-1.5 h-6 rounded-full bg-purple-500"></span>
-                        ประวัติการสำรองข้อมูล
-                    </h3>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <h3 className="text-lg font-bold text-white flex items-center gap-3">
+                            <span className="w-1.5 h-6 rounded-full bg-purple-500"></span>
+                            ประวัติการสำรองข้อมูล
+                            {backupLogs.length > 0 && (
+                                <span className="text-xs font-normal text-gray-500 ml-1">
+                                    ({filteredLogs.length}{searchDate ? `/${backupLogs.length}` : ''} รายการ)
+                                </span>
+                            )}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                            <div className="relative">
+                                <input
+                                    type="date"
+                                    value={searchDate}
+                                    onChange={(e) => setSearchDate(e.target.value)}
+                                    className="bg-[#1a1d21] border border-gray-700 rounded-xl px-4 py-2 text-sm text-gray-300 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all duration-200 [color-scheme:dark]"
+                                    title="ค้นหาตามวันที่"
+                                />
+                            </div>
+                            {searchDate && (
+                                <button
+                                    onClick={() => setSearchDate('')}
+                                    className="px-3 py-2 rounded-xl text-xs font-medium bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700 hover:text-gray-300 transition-all duration-200 flex items-center gap-1.5"
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    ล้างตัวกรอง
+                                </button>
+                            )}
+                        </div>
+                    </div>
 
                     {backupLogs.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full">
-                                <thead>
-                                    <tr className="border-b border-gray-800">
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อไฟล์</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ขนาด</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สำรองโดย</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่</th>
-                                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ดาวน์โหลด</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {backupLogs.map((log) => (
-                                        <tr key={log.backup_id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2">
-                                                    <svg className="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                                    <span className="text-gray-300 text-sm font-mono truncate max-w-[250px]">{log.file_name}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-gray-400">{log.file_size || '-'}</td>
-                                            <td className="px-4 py-3">
-                                                <span className={`px-2.5 py-1 rounded-lg text-xs font-medium border ${log.status === 'success'
-                                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                                    : log.status === 'restored'
-                                                        ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
-                                                        : log.status === 'partial'
-                                                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                                                            : 'bg-red-500/10 text-red-400 border-red-500/20'
-                                                    }`}>
-                                                    {log.status === 'success' ? '✓ สำรองสำเร็จ' : log.status === 'restored' ? '↻ กู้คืนสำเร็จ' : log.status === 'partial' ? '⚠ กู้คืนบางส่วน' : '✗ ล้มเหลว'}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-gray-400">
-                                                {log.fname ? `${log.fname} ${log.lname}` : `ID: ${log.created_by}`}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-gray-500">
-                                                {new Date(log.created_at).toLocaleString('th-TH')}
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
-                                                {log.has_data && log.status === 'success' ? (
-                                                    <button
-                                                        onClick={() => handleDownloadOld(log.backup_id, log.file_name)}
-                                                        disabled={downloading !== null}
-                                                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 mx-auto"
-                                                    >
-                                                        {downloading === log.backup_id ? (
-                                                            <div className="w-3 h-3 rounded-full border-2 border-indigo-400/30 border-t-indigo-400 animate-spin"></div>
-                                                        ) : (
-                                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                                        )}
-                                                        ดาวน์โหลด
-                                                    </button>
-                                                ) : (
-                                                    <span className="text-gray-700 text-xs">—</span>
-                                                )}
-                                            </td>
+                        filteredLogs.length > 0 ? (
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full">
+                                    <thead>
+                                        <tr className="border-b border-gray-800">
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อไฟล์</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ขนาด</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สำรองโดย</th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่</th>
+                                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ดาวน์โหลด</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                        {backupLogs.map((log) => (
+                                            <tr key={log.backup_id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <svg className="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                        <span className="text-gray-300 text-sm font-mono truncate max-w-[250px]">{log.file_name}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-gray-400">{log.file_size || '-'}</td>
+                                                <td className="px-4 py-3">
+                                                    <span className={`px-2.5 py-1 rounded-lg text-xs font-medium border ${log.status === 'success'
+                                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                                        : log.status === 'restored'
+                                                            ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+                                                            : log.status === 'partial'
+                                                                ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                                                : 'bg-red-500/10 text-red-400 border-red-500/20'
+                                                        }`}>
+                                                        {log.status === 'success' ? '✓ สำรองสำเร็จ' : log.status === 'restored' ? '↻ กู้คืนสำเร็จ' : log.status === 'partial' ? '⚠ กู้คืนบางส่วน' : '✗ ล้มเหลว'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-gray-400">
+                                                    {log.fname ? `${log.fname} ${log.lname}` : `ID: ${log.created_by}`}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-gray-500">
+                                                    {new Date(log.created_at).toLocaleString('th-TH')}
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    {log.has_data && log.status === 'success' ? (
+                                                        <button
+                                                            onClick={() => handleDownloadOld(log.backup_id, log.file_name)}
+                                                            disabled={downloading !== null}
+                                                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 mx-auto"
+                                                        >
+                                                            {downloading === log.backup_id ? (
+                                                                <div className="w-3 h-3 rounded-full border-2 border-indigo-400/30 border-t-indigo-400 animate-spin"></div>
+                                                            ) : (
+                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                            )}
+                                                            ดาวน์โหลด
+                                                        </button>
+                                                    ) : (
+                                                        <span className="text-gray-700 text-xs">—</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="text-center py-10">
+                                <div className="w-14 h-14 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <svg className="w-7 h-7 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                </div>
+                                <h3 className="text-sm font-medium text-gray-300">ไม่พบข้อมูลสำรองในวันที่เลือก</h3>
+                                <p className="mt-1 text-sm text-gray-600">{new Date(searchDate + 'T00:00:00').toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                <button
+                                    onClick={() => setSearchDate('')}
+                                    className="mt-3 text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                                >
+                                    แสดงทั้งหมด
+                                </button>
+                            </div>
+                        )
                     ) : (
                         <div className="text-center py-12">
                             <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
