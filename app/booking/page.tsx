@@ -417,30 +417,30 @@ function BookingContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-fuchsia-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fuchsia-600 mx-auto mb-4"></div>
-          <p className="text-fuchsia-800 font-medium">กำลังโหลดข้อมูล...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-700 font-medium">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-rose-100 py-6 md:py-12">
+    <div className="min-h-screen bg-gray-50 py-6 md:py-12">
       <div className="max-w-6xl mx-auto px-4 md:px-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <Link
             href="/"
-            className="group flex items-center gap-2 text-fuchsia-700 hover:text-fuchsia-900 transition-all duration-300 font-medium bg-white/50 px-4 py-2 rounded-full hover:bg-white/80 shadow-sm hover:shadow"
+            className="group flex items-center gap-2 text-blue-600 hover:text-gray-900 transition-all duration-300 font-medium bg-white px-4 py-2 rounded-full hover:bg-blue-50 shadow-sm hover:shadow"
           >
             <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             กลับหน้าหลัก
           </Link>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-600 to-purple-600 drop-shadow-sm text-center">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 drop-shadow-sm text-center">
             จองห้องประชุม
           </h1>
         </div>
@@ -448,7 +448,7 @@ function BookingContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Booking Form */}
           <div className="lg:col-span-2 order-2 lg:order-1">
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-fuchsia-100/50 p-6 md:p-8 border border-white/50">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-sm p-6 md:p-8 border border-white/50">
               {error && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                   <div className="flex">
@@ -481,7 +481,7 @@ function BookingContent() {
                     name="room_id"
                     value={form.room_id}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-fuchsia-100 rounded-xl focus:ring-4 focus:ring-fuchsia-100 focus:border-fuchsia-400 transition-all duration-300 bg-fuchsia-50/30 hover:bg-white"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-300 bg-gray-50/50 hover:bg-white"
                   >
                     <option value="">-- เลือกห้องประชุม --</option>
                     {rooms.map((room) => (
@@ -506,7 +506,7 @@ function BookingContent() {
                     // required
                     value={form.title}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-fuchsia-100 rounded-xl focus:ring-4 focus:ring-fuchsia-100 focus:border-fuchsia-400 transition-all duration-300 bg-fuchsia-50/30 hover:bg-white"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-300 bg-gray-50/50 hover:bg-white"
                     placeholder="เช่น ประชุมทีมพัฒนา, สัมมนาการตลาด"
                   // ...existing code...
                   />
@@ -524,7 +524,7 @@ function BookingContent() {
                     dateFormat="yyyy-MM-dd"
                     minDate={new Date()}
                     filterDate={date => !form.room_id || !bookedDates.includes(format(date, 'yyyy-MM-dd'))}
-                    className="w-full px-4 py-3 border border-fuchsia-100 rounded-xl focus:ring-4 focus:ring-fuchsia-100 focus:border-fuchsia-400 transition-all duration-300 bg-fuchsia-50/30 hover:bg-white"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-300 bg-gray-50/50 hover:bg-white"
                     dayClassName={date => bookedDates.includes(format(date, 'yyyy-MM-dd')) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : ''}
                   // ...existing code...
                   />
@@ -564,7 +564,7 @@ function BookingContent() {
                           return { ...prev, timeSlot: slot, start, end };
                         });
                       }}
-                      className="w-full px-4 py-3 border border-fuchsia-100 rounded-xl focus:ring-4 focus:ring-fuchsia-100 focus:border-fuchsia-400 transition-all duration-300 bg-fuchsia-50/30 hover:bg-white"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-300 bg-gray-50/50 hover:bg-white"
                       disabled={!selectedDate}
                     >
                       <option value="">-- เลือกช่วงเวลา --</option>
@@ -616,7 +616,7 @@ function BookingContent() {
                     // required
                     value={form.attendees}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-fuchsia-100 rounded-xl focus:ring-4 focus:ring-fuchsia-100 focus:border-fuchsia-400 transition-all duration-300 bg-fuchsia-50/30 hover:bg-white"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all duration-300 bg-gray-50/50 hover:bg-white"
                     placeholder="กรอกจำนวนผู้เข้าร่วมประชุม"
                   // ...existing code...
                   />
@@ -643,7 +643,7 @@ function BookingContent() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white px-6 py-4 rounded-xl shadow-lg shadow-fuchsia-200 hover:shadow-xl hover:shadow-fuchsia-300 hover:-translate-y-0.5 transition-all duration-300 font-bold text-lg flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-4 rounded-xl shadow-lg shadow-blue-100 hover:shadow-xl hover:shadow-blue-200 hover:-translate-y-0.5 transition-all duration-300 font-bold text-lg flex items-center justify-center gap-2"
                 >
                   {submitting ? (
                     <>
@@ -673,9 +673,9 @@ function BookingContent() {
 
           {/* Room Information */}
           <div className="lg:col-span-1 order-1 lg:order-2">
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-fuchsia-100/50 p-6 sticky top-8 border border-white/50">
-              <h3 className="text-xl font-bold text-fuchsia-900 mb-6 flex items-center gap-2">
-                <svg className="w-6 h-6 text-fuchsia-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-sm p-6 sticky top-8 border border-white/50">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 ข้อมูลห้องประชุม
@@ -687,7 +687,7 @@ function BookingContent() {
                 <div className="space-y-4">
                   {rooms.map((room) => (
                     <div key={room.room_id} className={`border rounded-2xl p-5 transition-all duration-300 ${room.is_available
-                      ? 'border-fuchsia-100 bg-gradient-to-br from-white to-fuchsia-50/50 hover:shadow-md hover:border-fuchsia-200'
+                      ? 'border-gray-200 bg-gradient-to-br from-white to-blue-50/50 hover:shadow-md hover:border-blue-200'
                       : 'border-gray-200 bg-gray-50 opacity-75'
                       }`}>
                       <div className="flex justify-between items-start mb-3">
@@ -715,32 +715,32 @@ function BookingContent() {
                 </div>
               )}
 
-              <div className="mt-8 p-5 bg-gradient-to-br from-fuchsia-50 to-pink-50 rounded-2xl border border-fuchsia-100">
-                <h4 className="font-bold text-fuchsia-800 mb-3 flex items-center gap-2">
+              <div className="mt-8 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-gray-200">
+                <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   คำแนะนำ
                 </h4>
-                <ul className="text-sm text-fuchsia-900/80 space-y-2 pl-1">
+                <ul className="text-sm text-gray-900/80 space-y-2 pl-1">
                   <li className="flex gap-2">
-                    <span className="text-fuchsia-400">•</span>
+                    <span className="text-blue-400">•</span>
                     เลือกห้องประชุมที่เหมาะสมกับจำนวนผู้เข้าร่วม
                   </li>
                   <li className="flex gap-2">
-                    <span className="text-fuchsia-400">•</span>
+                    <span className="text-blue-400">•</span>
                     ตรวจสอบอุปกรณ์ที่จำเป็นก่อนจอง
                   </li>
                   <li className="flex gap-2">
-                    <span className="text-fuchsia-400">•</span>
+                    <span className="text-blue-400">•</span>
                     จองล่วงหน้าอย่างน้อย 1 ชั่วโมง
                   </li>
                   <li className="flex gap-2">
-                    <span className="text-fuchsia-400">•</span>
+                    <span className="text-blue-400">•</span>
                     ยกเลิกการจองหากไม่สามารถใช้ได้
                   </li>
                   <li className="flex gap-2">
-                    <span className="text-fuchsia-400">•</span>
+                    <span className="text-blue-400">•</span>
                     ห้องที่มีสถานะ &quot;ไม่ว่าง&quot; จะไม่สามารถจองได้
                   </li>
                 </ul>
@@ -807,10 +807,10 @@ function BookingContent() {
 export default function BookingPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-fuchsia-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fuchsia-600 mx-auto mb-4"></div>
-          <p className="text-fuchsia-800 font-medium">กำลังโหลด...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-700 font-medium">กำลังโหลด...</p>
         </div>
       </div>
     }>
