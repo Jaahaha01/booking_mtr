@@ -81,10 +81,9 @@ export default function AdminBackupPage() {
         init();
     }, [router]);
 
-    const handleBackup = async (type: 'database' | 'system' | 'full') => {
+    const handleBackup = async (type: 'database' | 'full') => {
         const typeLabels: Record<string, string> = {
             database: 'ฐานข้อมูล',
-            system: 'ระบบ',
             full: 'ข้อมูลทั้งหมด',
         };
 
@@ -106,26 +105,6 @@ export default function AdminBackupPage() {
 
         setBackingUp(type);
         try {
-            if (type === 'system') {
-                // สำรองระบบ: ดาวน์โหลด ZIP
-                const res = await fetch('/api/admin/backup/system-zip', { method: 'POST' });
-                if (!res.ok) throw new Error('System backup failed');
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-                a.href = url;
-                a.download = `backup_system_${timestamp}.zip`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                await fetchData();
-                Swal.fire({ title: 'สำรองระบบสำเร็จ!', html: '<p class="text-gray-300">ไฟล์ ZIP ของระบบทั้งหมดถูกดาวน์โหลดแล้ว</p>', icon: 'success', confirmButtonText: 'ตกลง', confirmButtonColor: '#6366f1', background: '#23272b', color: '#e5e7eb' });
-                setBackingUp(null);
-                return;
-            }
-
             const res = await fetch('/api/admin/backup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -324,7 +303,7 @@ export default function AdminBackupPage() {
                 throw new Error(data.error || 'ลบไม่สำเร็จ');
             }
             await fetchData();
-            Swal.fire({ title: 'ลบสำเร็จ', text: 'ลบประวัติสำรองข้อมูลเรียบร้อย', icon: 'success', confirmButtonText: 'ตกลง', confirmButtonColor: '#6366f1', background: '#23272b', color: '#e5e7eb', timer: 2000 });
+            Swal.fire({ title: 'ลบสำเร็จ', icon: 'success', confirmButtonText: 'ตกลง', confirmButtonColor: '#6366f1', background: '#23272b', color: '#e5e7eb', timer: 2000 });
         } catch (err: any) {
             Swal.fire({ title: 'เกิดข้อผิดพลาด', text: err.message, icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', background: '#23272b', color: '#e5e7eb' });
         } finally {
@@ -409,7 +388,7 @@ export default function AdminBackupPage() {
                 </div>
 
                 {/* Backup Options */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
                     {/* สำรองฐานข้อมูล */}
                     <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 overflow-hidden group hover:border-indigo-500/30 transition-all duration-300">
@@ -422,10 +401,10 @@ export default function AdminBackupPage() {
                             </div>
                             <h3 className="text-xl font-bold text-white mb-2">สำรองฐานข้อมูล</h3>
                             <p className="text-gray-400 text-sm mb-4 leading-relaxed">
-                                ข้อมูลผู้ใช้, การจอง, ห้องประชุม, ตารางเรียน และความคิดเห็น
+                                สำรองเฉพาะข้อมูลในฐานข้อมูล (ตารางทั้งหมด)
                             </p>
                             <div className="space-y-2 mb-6">
-                                {['ข้อมูลผู้ใช้ (รวมรหัสผ่าน)', 'ข้อมูลการจองทั้งหมด', 'ข้อมูลห้องและตารางเรียน'].map((item) => (
+                                {['ข้อมูลผู้ใช้ (รวมรหัสผ่าน)', 'ข้อมูลการจองทั้งหมด', 'ข้อมูลห้องประชุมและตารางเรียน', 'ข้อมูลความคิดเห็น'].map((item) => (
                                     <div key={item} className="flex items-center gap-2 text-sm text-gray-500">
                                         <svg className="w-4 h-4 text-indigo-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                                         {item}
@@ -446,41 +425,6 @@ export default function AdminBackupPage() {
                         </div>
                     </div>
 
-                    {/* สำรองระบบ */}
-                    <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 overflow-hidden group hover:border-cyan-500/30 transition-all duration-300">
-                        <div className="h-1.5 bg-gradient-to-r from-cyan-500 to-cyan-600"></div>
-                        <div className="p-6">
-                            <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center mb-5 border border-cyan-500/20 group-hover:scale-110 transition-transform duration-300">
-                                <svg className="w-7 h-7 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2">สำรองระบบ (ZIP)</h3>
-                            <p className="text-gray-400 text-sm mb-4 leading-relaxed">
-                                สำรองซอร์สโค้ดทั้งหมดเป็นไฟล์ ZIP พร้อมใช้งาน
-                            </p>
-                            <div className="space-y-2 mb-6">
-                                {['ซอร์สโค้ดทั้งหมดของโปรเจค', 'ไฟล์ตั้งค่า (config, package.json)', 'ไม่รวม node_modules, .next, .env'].map((item) => (
-                                    <div key={item} className="flex items-center gap-2 text-sm text-gray-500">
-                                        <svg className="w-4 h-4 text-cyan-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                        {item}
-                                    </div>
-                                ))}
-                            </div>
-                            <button
-                                onClick={() => handleBackup('system')}
-                                disabled={backingUp !== null}
-                                className="w-full py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {backingUp === 'system' ? (
-                                    <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div> กำลังสำรอง...</>
-                                ) : (
-                                    <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> สำรองเป็น ZIP</>
-                                )}
-                            </button>
-                        </div>
-                    </div>
 
                     {/* สำรองข้อมูลทั้งหมด */}
                     <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 overflow-hidden group hover:border-emerald-500/30 transition-all duration-300 relative">
@@ -496,10 +440,16 @@ export default function AdminBackupPage() {
                             </div>
                             <h3 className="text-xl font-bold text-white mb-2">สำรองข้อมูลทั้งหมด</h3>
                             <p className="text-gray-400 text-sm mb-4 leading-relaxed">
-                                รวมฐานข้อมูล + ระบบครบถ้วน เหมาะสำหรับสำรองประจำ
+                                รวมฐานข้อมูล + ข้อมูลระบบครบถ้วน เหมาะสำหรับสำรองประจำ
                             </p>
                             <div className="space-y-2 mb-6">
-                                {['รวมข้อมูลฐานข้อมูลทั้งหมด', 'รวมการตั้งค่าระบบ', 'ไฟล์สำรองครบถ้วนพร้อมกู้คืน'].map((item) => (
+                                {[
+                                    'ข้อมูลผู้ใช้ทั้งหมด (รวมรหัสผ่าน)',
+                                    'ข้อมูลการจอง, ห้องประชุม, ตารางเรียน',
+                                    'ข้อมูลความคิดเห็น (Feedbacks)',
+                                    'สถิติการจอง (ยืนยัน, รอ, ยกเลิก)',
+                                    'การตั้งค่าห้องประชุม + ข้อมูลเซิร์ฟเวอร์',
+                                ].map((item) => (
                                     <div key={item} className="flex items-center gap-2 text-sm text-gray-500">
                                         <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                                         {item}
@@ -643,7 +593,6 @@ export default function AdminBackupPage() {
                             {[
                                 { key: 'all', label: 'ทั้งหมด' },
                                 { key: 'database', label: 'ฐานข้อมูล', color: 'indigo' },
-                                { key: 'system', label: 'ระบบ', color: 'cyan' },
                                 { key: 'full', label: 'ข้อมูลทั้งหมด', color: 'emerald' },
                             ].map(({ key, label, color }) => (
                                 <button
