@@ -80,14 +80,23 @@ export async function POST(request: NextRequest) {
                 }
 
                 if (table === 'users') {
-                    // ไม่ลบ admin ปัจจุบัน
+                    // ดึงข้อมูล admin ปัจจุบัน เพื่อเช็ค username/email
+                    const adminRows = await txQuery`SELECT user_id, username, email FROM users WHERE user_id = ${parseInt(adminId)}`;
+                    const currentAdmin = adminRows?.[0];
+
+                    // ลบ user ทั้งหมดยกเว้น admin ปัจจุบัน
                     await txQuery`DELETE FROM users WHERE user_id != ${parseInt(adminId)}`;
 
                     // placeholder password กรณีไฟล์ backup เก่าที่ไม่ได้เก็บ password
                     const placeholderPassword = '$2b$10$placeholder000000000000000000000000000000000000000';
 
+                    let restoredCount = 0;
                     for (const row of data) {
+                        // ข้าม admin ปัจจุบัน (เช็คทั้ง user_id, username, email)
                         if (String(row.user_id) === String(adminId)) continue;
+                        if (currentAdmin && row.username === currentAdmin.username) continue;
+                        if (currentAdmin && row.email === currentAdmin.email) continue;
+
                         const userPassword = row.password || placeholderPassword;
                         await txQuery`
                             INSERT INTO users (user_id, username, password, email, phone, fname, lname, identity_card, address, organization, verification_status, role, image, created_at, updated_at)
@@ -103,9 +112,10 @@ export async function POST(request: NextRequest) {
                                 verification_status = EXCLUDED.verification_status,
                                 image = EXCLUDED.image
                         `;
+                        restoredCount++;
                     }
                     const hasPasswords = data.some((r: any) => r.password);
-                    results.restored.push({ table: 'users', count: data.length, note: hasPasswords ? 'ไม่รวม admin ปัจจุบัน, กู้คืนรหัสผ่านแล้ว' : 'ไม่รวม admin ปัจจุบัน, ผู้ใช้ต้องตั้งรหัสผ่านใหม่' });
+                    results.restored.push({ table: 'users', count: restoredCount, note: hasPasswords ? 'ไม่รวม admin ปัจจุบัน, กู้คืนรหัสผ่านแล้ว' : 'ไม่รวม admin ปัจจุบัน, ผู้ใช้ต้องตั้งรหัสผ่านใหม่' });
                 }
 
                 if (table === 'room_schedules') {
