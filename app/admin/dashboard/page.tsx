@@ -61,6 +61,8 @@ export default function AdminDashboardPage() {
   }
 
   // Current period data based on filter
+  const isStaff = user?.role === 'staff';
+
   const periodData = data?.[timeFilter] || {};
   const periodBookings = periodData?.bookings || 0;
   const periodUsers = periodData?.users || 0;
@@ -171,28 +173,40 @@ export default function AdminDashboardPage() {
               <span className="w-2 h-8 bg-indigo-500 rounded-full"></span>
               แดชบอร์ด
             </h1>
-            <p className="text-gray-500 mt-1 ml-5 text-sm">ภาพรวมสถิติและการใช้งานระบบ • {getThaiPeriodLabel()}</p>
+            <p className="text-gray-500 mt-1 ml-5 text-sm">ภาพรวม{isStaff ? 'การใช้งานระบบ' : 'สถิติและการใช้งานระบบ'} • {getThaiPeriodLabel()}</p>
           </div>
-          {/* Time Filter Tabs */}
-          <div className="flex items-center bg-[#23272b] p-1 rounded-xl border border-gray-800 shadow-lg">
-            {(['monthly', 'weekly', 'daily'] as const).map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setTimeFilter(filter)}
-                className={`px-4 sm:px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${timeFilter === filter
-                  ? filter === 'monthly'
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
-                    : filter === 'weekly'
-                      ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/30'
-                      : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                  }`}
-              >
-                {filter === 'monthly' ? 'รายเดือน' : filter === 'weekly' ? 'รายสัปดาห์' : 'รายวัน'}
-              </button>
-            ))}
-          </div>
+          {/* Time Filter Tabs - ซ่อนสำหรับ staff */}
+          {!isStaff && (
+            <div className="flex items-center bg-[#23272b] p-1 rounded-xl border border-gray-800 shadow-lg">
+              {(['monthly', 'weekly', 'daily'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setTimeFilter(filter)}
+                  className={`px-4 sm:px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${timeFilter === filter
+                    ? filter === 'monthly'
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                      : filter === 'weekly'
+                        ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/30'
+                        : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    }`}
+                >
+                  {filter === 'monthly' ? 'รายเดือน' : filter === 'weekly' ? 'รายสัปดาห์' : 'รายวัน'}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* Staff Info Banner */}
+        {isStaff && (
+          <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3">
+            <svg className="w-5 h-5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-amber-400 text-sm">คุณเข้าสู่ระบบในฐานะเจ้าหน้าที่ — กราฟและสถิติเชิงลึกจะแสดงเฉพาะผู้ดูแลระบบ (Admin) เท่านั้น</p>
+          </div>
+        )}
 
         {/* ============ TOP SECTION — Period Stats ============ */}
 
@@ -264,136 +278,140 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Main Trend Chart */}
-          <div className="lg:col-span-2 bg-gradient-to-br from-[#23272b] to-[#1e2328] p-6 rounded-2xl border border-gray-800">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-white flex items-center gap-3">
-                <span className={`w-1.5 h-6 rounded-full`} style={{ backgroundColor: chartColor }}></span>
-                📊 สถิติการจอง
-                <span className="text-sm font-normal text-gray-500">
-                  — {timeFilter === 'monthly' ? 'แสดงจำนวนการจองแต่ละวันของเดือนนี้' : timeFilter === 'weekly' ? 'แสดงจำนวนการจองแต่ละวันในสัปดาห์นี้' : 'แสดงจำนวนการจองแต่ละชั่วโมงของวันนี้'}
-                </span>
-              </h3>
-            </div>
-            {periodChart.length > 0 ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={periodChart} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id={`color${chartGradient}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={chartColor} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2d3239" />
-                  <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={{ stroke: '#2d3239' }} tickLine={false} />
-                  <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="bookings" stroke={chartColor} strokeWidth={2.5} fillOpacity={1} fill={`url(#color${chartGradient})`} dot={{ fill: chartColor, strokeWidth: 0, r: 3 }} activeDot={{ r: 6, stroke: chartColor, strokeWidth: 2, fill: '#1a1d21' }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[280px] text-gray-600">
-                <div className="text-center">
-                  <svg className="w-12 h-12 mx-auto mb-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  <p className="text-sm">ไม่มีข้อมูลในช่วงเวลานี้</p>
-                </div>
+        {/* Charts Row - ซ่อนสำหรับ staff */}
+        {!isStaff && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* Main Trend Chart */}
+            <div className="lg:col-span-2 bg-gradient-to-br from-[#23272b] to-[#1e2328] p-6 rounded-2xl border border-gray-800">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-white flex items-center gap-3">
+                  <span className={`w-1.5 h-6 rounded-full`} style={{ backgroundColor: chartColor }}></span>
+                  📊 สถิติการจอง
+                  <span className="text-sm font-normal text-gray-500">
+                    — {timeFilter === 'monthly' ? 'แสดงจำนวนการจองแต่ละวันของเดือนนี้' : timeFilter === 'weekly' ? 'แสดงจำนวนการจองแต่ละวันในสัปดาห์นี้' : 'แสดงจำนวนการจองแต่ละชั่วโมงของวันนี้'}
+                  </span>
+                </h3>
               </div>
-            )}
-          </div>
-
-          {/* Room Usage Pie Chart */}
-          <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] p-6 rounded-2xl border border-gray-800">
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-3">
-              <span className="w-1.5 h-6 rounded-full bg-purple-500"></span>
-              สัดส่วนการใช้ห้อง
-            </h3>
-            {roomsData.length > 0 && roomsData.some((r: any) => r.value > 0) ? (
-              <div className="relative">
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie
-                      data={roomsData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={85}
-                      paddingAngle={3}
-                      dataKey="value"
-                      nameKey="name"
-                      strokeWidth={0}
-                    >
-                      {roomsData.map((_: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={ROOM_COLORS[index % ROOM_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<PieTooltip />} />
-                  </PieChart>
+              {periodChart.length > 0 ? (
+                <ResponsiveContainer width="100%" height={280}>
+                  <AreaChart data={periodChart} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id={`color${chartGradient}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={chartColor} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2d3239" />
+                    <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={{ stroke: '#2d3239' }} tickLine={false} />
+                    <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area type="monotone" dataKey="bookings" stroke={chartColor} strokeWidth={2.5} fillOpacity={1} fill={`url(#color${chartGradient})`} dot={{ fill: chartColor, strokeWidth: 0, r: 3 }} activeDot={{ r: 6, stroke: chartColor, strokeWidth: 2, fill: '#1a1d21' }} />
+                  </AreaChart>
                 </ResponsiveContainer>
-                {/* Legend */}
-                <div className="mt-2 space-y-1.5">
-                  {roomsData.map((entry: any, index: number) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ROOM_COLORS[index % ROOM_COLORS.length] }}></span>
-                        <span className="text-gray-400 text-xs">{entry.name}</span>
+              ) : (
+                <div className="flex items-center justify-center h-[280px] text-gray-600">
+                  <div className="text-center">
+                    <svg className="w-12 h-12 mx-auto mb-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <p className="text-sm">ไม่มีข้อมูลในช่วงเวลานี้</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Room Usage Pie Chart */}
+            <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] p-6 rounded-2xl border border-gray-800">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-3">
+                <span className="w-1.5 h-6 rounded-full bg-purple-500"></span>
+                สัดส่วนการใช้ห้อง
+              </h3>
+              {roomsData.length > 0 && roomsData.some((r: any) => r.value > 0) ? (
+                <div className="relative">
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={roomsData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={85}
+                        paddingAngle={3}
+                        dataKey="value"
+                        nameKey="name"
+                        strokeWidth={0}
+                      >
+                        {roomsData.map((_: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={ROOM_COLORS[index % ROOM_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<PieTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Legend */}
+                  <div className="mt-2 space-y-1.5">
+                    {roomsData.map((entry: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ROOM_COLORS[index % ROOM_COLORS.length] }}></span>
+                          <span className="text-gray-400 text-xs">{entry.name}</span>
+                        </div>
+                        <span className="text-gray-300 font-medium text-xs">{entry.value}</span>
                       </div>
-                      <span className="text-gray-300 font-medium text-xs">{entry.value}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-[280px] text-gray-600">
-                <div className="text-center">
-                  <svg className="w-12 h-12 mx-auto mb-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-                  </svg>
-                  <p className="text-sm">ไม่มีข้อมูลการใช้ห้อง</p>
+              ) : (
+                <div className="flex items-center justify-center h-[280px] text-gray-600">
+                  <div className="text-center">
+                    <svg className="w-12 h-12 mx-auto mb-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                    </svg>
+                    <p className="text-sm">ไม่มีข้อมูลการใช้ห้อง</p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Feedback + Quick Actions Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Feedback Distribution */}
-          <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] p-6 rounded-2xl border border-gray-800">
-            <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-3">
-              <span className="w-1.5 h-6 rounded-full bg-yellow-500"></span>
-              ความพึงพอใจของผู้ใช้งาน
-            </h3>
-            <div className="space-y-3">
-              {[5, 4, 3, 2, 1].map((star) => {
-                const count = data?.feedbacks?.distribution ? data.feedbacks.distribution[star - 1] : 0;
-                const total = data?.feedbacks?.total || 1;
-                const percent = (count / total) * 100;
+        <div className={`grid grid-cols-1 ${isStaff ? '' : 'lg:grid-cols-2'} gap-6 mb-8`}>
+          {/* Feedback Distribution - ซ่อนสำหรับ staff */}
+          {!isStaff && (
+            <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] p-6 rounded-2xl border border-gray-800">
+              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-3">
+                <span className="w-1.5 h-6 rounded-full bg-yellow-500"></span>
+                ความพึงพอใจของผู้ใช้งาน
+              </h3>
+              <div className="space-y-3">
+                {[5, 4, 3, 2, 1].map((star) => {
+                  const count = data?.feedbacks?.distribution ? data.feedbacks.distribution[star - 1] : 0;
+                  const total = data?.feedbacks?.total || 1;
+                  const percent = (count / total) * 100;
 
-                return (
-                  <div key={star} className="flex items-center gap-3">
-                    <div className="flex items-center w-12 text-sm font-bold text-gray-400">
-                      {star} <span className="text-yellow-400 ml-1">★</span>
+                  return (
+                    <div key={star} className="flex items-center gap-3">
+                      <div className="flex items-center w-12 text-sm font-bold text-gray-400">
+                        {star} <span className="text-yellow-400 ml-1">★</span>
+                      </div>
+                      <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full transition-all duration-500"
+                          style={{ width: `${percent}%` }}
+                        ></div>
+                      </div>
+                      <div className="w-8 text-right text-xs text-gray-500 font-medium">{count}</div>
                     </div>
-                    <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full transition-all duration-500"
-                        style={{ width: `${percent}%` }}
-                      ></div>
-                    </div>
-                    <div className="w-8 text-right text-xs text-gray-500 font-medium">{count}</div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+              <Link href="/admin/feedbacks" className="block text-center mt-6 text-indigo-400 text-sm font-medium hover:text-indigo-300 transition-colors">
+                ดูความคิดเห็นทั้งหมด →
+              </Link>
             </div>
-            <Link href="/admin/feedbacks" className="block text-center mt-6 text-indigo-400 text-sm font-medium hover:text-indigo-300 transition-colors">
-              ดูความคิดเห็นทั้งหมด →
-            </Link>
-          </div>
+          )}
 
           {/* Quick Actions */}
           <div className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 p-6 rounded-2xl shadow-lg shadow-indigo-900/20 flex flex-col justify-between relative overflow-hidden">
@@ -438,80 +456,82 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* ============ BOTTOM SECTION — Historical Monthly Statistics (Independent) ============ */}
-        <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] p-6 rounded-2xl border border-gray-800">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-3">
-              <span className="w-1.5 h-6 rounded-full bg-amber-500"></span>
-              สถิติย้อนหลังรายเดือน
-              <span className="text-sm font-normal text-gray-500">(12 เดือนล่าสุด)</span>
-            </h3>
-          </div>
-
-          {histChartData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={histChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2d3239" />
-                  <XAxis dataKey="month" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={{ stroke: '#2d3239' }} tickLine={false} />
-                  <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                  <Tooltip content={<HistoricalTooltip />} />
-                  <Legend
-                    wrapperStyle={{ paddingTop: '20px' }}
-                    formatter={(value: string) => <span className="text-gray-400 text-xs">{value}</span>}
-                  />
-                  {histRoomNames.map((room, index) => (
-                    <Bar
-                      key={room}
-                      dataKey={room}
-                      name={room}
-                      fill={HISTORICAL_COLORS[index % HISTORICAL_COLORS.length]}
-                      radius={[4, 4, 0, 0]}
-                      maxBarSize={40}
-                    />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-
-              {/* Summary table */}
-              <div className="mt-6 overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-800">
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium text-xs uppercase tracking-wider">เดือน</th>
-                      <th className="text-right py-3 px-4 text-gray-500 font-medium text-xs uppercase tracking-wider">จำนวนการจอง</th>
-                      <th className="text-right py-3 px-4 text-gray-500 font-medium text-xs uppercase tracking-wider">ผู้ใช้ที่จอง</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historicalData.map((h: any, i: number) => (
-                      <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                        <td className="py-2.5 px-4 text-gray-300 font-medium">{h.label}</td>
-                        <td className="py-2.5 px-4 text-right">
-                          <span className="text-indigo-400 font-bold">{h.bookings}</span>
-                          <span className="text-gray-600 ml-1">ครั้ง</span>
-                        </td>
-                        <td className="py-2.5 px-4 text-right">
-                          <span className="text-cyan-400 font-bold">{h.unique_users}</span>
-                          <span className="text-gray-600 ml-1">คน</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-600">
-              <div className="text-center">
-                <svg className="w-16 h-16 mx-auto mb-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <p className="text-sm">ยังไม่มีข้อมูลสถิติย้อนหลัง</p>
-              </div>
+        {/* ============ BOTTOM SECTION — Historical Monthly Statistics (Independent) — ซ่อนสำหรับ staff ============ */}
+        {!isStaff && (
+          <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] p-6 rounded-2xl border border-gray-800">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-3">
+                <span className="w-1.5 h-6 rounded-full bg-amber-500"></span>
+                สถิติย้อนหลังรายเดือน
+                <span className="text-sm font-normal text-gray-500">(12 เดือนล่าสุด)</span>
+              </h3>
             </div>
-          )}
-        </div>
+
+            {histChartData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={350}>
+                  <BarChart data={histChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2d3239" />
+                    <XAxis dataKey="month" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={{ stroke: '#2d3239' }} tickLine={false} />
+                    <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <Tooltip content={<HistoricalTooltip />} />
+                    <Legend
+                      wrapperStyle={{ paddingTop: '20px' }}
+                      formatter={(value: string) => <span className="text-gray-400 text-xs">{value}</span>}
+                    />
+                    {histRoomNames.map((room, index) => (
+                      <Bar
+                        key={room}
+                        dataKey={room}
+                        name={room}
+                        fill={HISTORICAL_COLORS[index % HISTORICAL_COLORS.length]}
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={40}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+
+                {/* Summary table */}
+                <div className="mt-6 overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-800">
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium text-xs uppercase tracking-wider">เดือน</th>
+                        <th className="text-right py-3 px-4 text-gray-500 font-medium text-xs uppercase tracking-wider">จำนวนการจอง</th>
+                        <th className="text-right py-3 px-4 text-gray-500 font-medium text-xs uppercase tracking-wider">ผู้ใช้ที่จอง</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {historicalData.map((h: any, i: number) => (
+                        <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+                          <td className="py-2.5 px-4 text-gray-300 font-medium">{h.label}</td>
+                          <td className="py-2.5 px-4 text-right">
+                            <span className="text-indigo-400 font-bold">{h.bookings}</span>
+                            <span className="text-gray-600 ml-1">ครั้ง</span>
+                          </td>
+                          <td className="py-2.5 px-4 text-right">
+                            <span className="text-cyan-400 font-bold">{h.unique_users}</span>
+                            <span className="text-gray-600 ml-1">คน</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-gray-600">
+                <div className="text-center">
+                  <svg className="w-16 h-16 mx-auto mb-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <p className="text-sm">ยังไม่มีข้อมูลสถิติย้อนหลัง</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
