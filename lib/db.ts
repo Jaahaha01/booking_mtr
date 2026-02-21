@@ -19,7 +19,7 @@ let pool: Pool | null = null;
 function getPool() {
   if (!pool) {
     pool = new Pool(dbConfig);
-    
+
     pool.on('error', (err) => {
       console.error('Unexpected error on idle client', err);
     });
@@ -42,7 +42,7 @@ export const db = async (strings: TemplateStringsArray, ...values: any[]) => {
     for (let i = 0; i < values.length; i++) {
       query += '$' + (i + 1) + strings[i + 1];
     }
-    
+
     const pool = getPool();
     const result = await pool.query(query, values);
     return result.rows;
@@ -73,5 +73,33 @@ export async function closeConnection() {
     }
   } catch (error) {
     console.error('❌ Error closing database connection:', error);
+  }
+}
+
+// Transaction helper — ถ้ามี error จะ rollback อัตโนมัติ ป้องกันข้อมูลหาย
+export async function dbTransaction<T>(callback: (query: (strings: TemplateStringsArray, ...values: any[]) => Promise<any[]>) => Promise<T>): Promise<T> {
+  const pool = getPool();
+  const client = await pool.connect();
+
+  // สร้าง query function สำหรับ client นี้
+  const query = async (strings: TemplateStringsArray, ...values: any[]) => {
+    let sql = strings[0];
+    for (let i = 0; i < values.length; i++) {
+      sql += '$' + (i + 1) + strings[i + 1];
+    }
+    const result = await client.query(sql, values);
+    return result.rows;
+  };
+
+  try {
+    await client.query('BEGIN');
+    const result = await callback(query);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
   }
 }
