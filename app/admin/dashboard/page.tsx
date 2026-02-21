@@ -92,12 +92,16 @@ export default function AdminDashboardPage() {
   const chartColor = timeFilter === 'monthly' ? '#6366f1' : timeFilter === 'weekly' ? '#06b6d4' : '#10b981';
   const chartGradient = timeFilter === 'monthly' ? 'indigo' : timeFilter === 'weekly' ? 'cyan' : 'emerald';
 
-  // Custom tooltip
+  // Custom tooltip with better Thai labels
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      let contextLabel = label;
+      if (timeFilter === 'monthly') contextLabel = `วันที่ ${label}`;
+      else if (timeFilter === 'daily') contextLabel = `เวลา ${label} น.`;
+      else contextLabel = `วัน${label}`;
       return (
         <div className="bg-[#1e2328] border border-gray-700 rounded-xl px-4 py-3 shadow-2xl">
-          <p className="text-gray-400 text-xs mb-1">{label}</p>
+          <p className="text-gray-400 text-xs mb-1">{contextLabel}</p>
           <p className="text-white font-bold text-lg">{payload[0].value} <span className="text-sm font-normal text-gray-400">การจอง</span></p>
         </div>
       );
@@ -203,10 +207,10 @@ export default function AdminDashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <span className="text-gray-500 text-sm font-medium">การจอง</span>
+              <span className="text-gray-500 text-sm font-medium">จำนวนการจอง</span>
             </div>
-            <div className="text-3xl font-bold text-white">{periodBookings}</div>
-            <p className="text-xs text-gray-500 mt-1">{timeFilter === 'monthly' ? 'เดือนนี้' : timeFilter === 'weekly' ? 'สัปดาห์นี้' : 'วันนี้'}</p>
+            <div className="text-3xl font-bold text-white">{periodBookings} <span className="text-base font-normal text-gray-500">ครั้ง</span></div>
+            <p className="text-xs text-gray-500 mt-1">{timeFilter === 'monthly' ? `ข้อมูลเดือนนี้ (${getThaiPeriodLabel()})` : timeFilter === 'weekly' ? 'ข้อมูลสัปดาห์นี้ (จันทร์ - อาทิตย์)' : `ข้อมูลวันนี้ (${getThaiPeriodLabel()})`}</p>
           </div>
 
           {/* Users */}
@@ -218,10 +222,10 @@ export default function AdminDashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <span className="text-gray-500 text-sm font-medium">ผู้ใช้งาน</span>
+              <span className="text-gray-500 text-sm font-medium">ผู้ใช้ที่จอง</span>
             </div>
-            <div className="text-3xl font-bold text-white">{periodUsers}</div>
-            <p className="text-xs text-gray-500 mt-1">ผู้ใช้ที่จอง{timeFilter === 'monthly' ? 'เดือนนี้' : timeFilter === 'weekly' ? 'สัปดาห์นี้' : 'วันนี้'}</p>
+            <div className="text-3xl font-bold text-white">{periodUsers} <span className="text-base font-normal text-gray-500">คน</span></div>
+            <p className="text-xs text-gray-500 mt-1">ผู้ใช้ที่มีการจอง{timeFilter === 'monthly' ? 'ในเดือนนี้' : timeFilter === 'weekly' ? 'ในสัปดาห์นี้' : 'ในวันนี้'}</p>
           </div>
 
           {/* Pending */}
@@ -236,9 +240,9 @@ export default function AdminDashboardPage() {
               <span className="text-gray-500 text-sm font-medium">รอการอนุมัติ</span>
             </div>
             <div className="text-3xl font-bold text-amber-400">
-              {(parseInt(data?.counts?.pending_users || 0) + parseInt(data?.counts?.pending_bookings || 0))}
+              {(parseInt(data?.counts?.pending_users || 0) + parseInt(data?.counts?.pending_bookings || 0))} <span className="text-base font-normal text-gray-500">รายการ</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">{data?.counts?.pending_bookings || 0} การจอง, {data?.counts?.pending_users || 0} ผู้ใช้</p>
+            <p className="text-xs text-gray-500 mt-1">การจอง {data?.counts?.pending_bookings || 0} รายการ, ผู้ใช้ {data?.counts?.pending_users || 0} คน</p>
           </div>
 
           {/* Feedback */}
@@ -267,9 +271,9 @@ export default function AdminDashboardPage() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-white flex items-center gap-3">
                 <span className={`w-1.5 h-6 rounded-full`} style={{ backgroundColor: chartColor }}></span>
-                สถิติการจอง
+                📊 สถิติการจอง
                 <span className="text-sm font-normal text-gray-500">
-                  ({timeFilter === 'monthly' ? 'รายวันของเดือนนี้' : timeFilter === 'weekly' ? 'รายวันของสัปดาห์นี้' : 'รายชั่วโมงวันนี้'})
+                  — {timeFilter === 'monthly' ? 'แสดงจำนวนการจองแต่ละวันของเดือนนี้' : timeFilter === 'weekly' ? 'แสดงจำนวนการจองแต่ละวันในสัปดาห์นี้' : 'แสดงจำนวนการจองแต่ละชั่วโมงของวันนี้'}
                 </span>
               </h3>
             </div>

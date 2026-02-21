@@ -103,8 +103,13 @@ export default function AdminSidebar() {
       {user && (
         <div className="px-5 py-5 border-b border-gray-800/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-500/20">
-              {user.fname?.charAt(0) || 'A'}
+            {user.image ? (
+              <img src={user.image} alt={`${user.fname} ${user.lname}`} className="w-10 h-10 rounded-xl object-cover shadow-lg shadow-indigo-500/20 border border-gray-700" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }} />
+            ) : null}
+            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 ${user.image ? 'hidden' : ''}`}>
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-200 truncate">{user.fname} {user.lname}</p>

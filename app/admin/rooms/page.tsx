@@ -1,8 +1,6 @@
-
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import AdminSidebar from '@/app/components/AdminSidebar';
 
 interface Room {
@@ -32,392 +30,110 @@ export default function AdminRoomsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  const [form, setForm] = useState<RoomForm>({
-    name: '',
-    room_number: '',
-    capacity: '',
-    description: ''
-  });
+  const [form, setForm] = useState<RoomForm>({ name: '', room_number: '', capacity: '', description: '' });
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const response = await fetch('/api/profile');
-        if (!response.ok) {
-          router.push('/login');
-          return;
-        }
+        if (!response.ok) { router.push('/login'); return; }
         const userData = await response.json();
         setUser(userData);
-        // เฉพาะ admin เท่านั้นที่สามารถเพิ่ม/แก้ไข/ลบห้องประชุม
-        if (userData.role !== 'admin' && userData.role !== 'staff') {
-          router.push('/');
-          return;
-        }
-        if (userData.role === 'staff' && (window.location.pathname === '/admin/rooms')) {
-          setError('คุณไม่มีสิทธิ์จัดการห้องประชุม');
-          setTimeout(() => {
-            router.back();
-          }, 1800);
-          setLoading(false);
-          return;
-        }
-        // ดึงข้อมูลห้องประชุมทั้งหมด
-        const roomsResponse = await fetch('/api/admin/rooms');
-        if (roomsResponse.ok) {
-          const roomsData = await roomsResponse.json();
-          setRooms(roomsData);
-        }
+        if (userData.role !== 'admin' && userData.role !== 'staff') { router.push('/'); return; }
+        if (userData.role === 'staff') { setError('คุณไม่มีสิทธิ์จัดการห้องประชุม'); setTimeout(() => router.back(), 1800); setLoading(false); return; }
+        const r = await fetch('/api/admin/rooms');
+        if (r.ok) setRooms(await r.json());
         setLoading(false);
-      } catch (error) {
-        console.error('Error checking auth:', error);
-        router.push('/login');
-      }
+      } catch { router.push('/login'); }
     };
     checkAuth();
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setSubmitting(true);
-
+    e.preventDefault(); setError(''); setSuccess(''); setSubmitting(true);
     try {
-      const url = editingRoom 
-        ? `/api/admin/rooms/${editingRoom.room_id}`
-        : '/api/admin/rooms';
-      
-      const method = editingRoom ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(form),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
-        setSubmitting(false);
-        return;
-      }
-
-      setSuccess(editingRoom ? 'อัปเดตห้องประชุมสำเร็จ' : 'เพิ่มห้องประชุมสำเร็จ');
-      
-      // รีเฟรชข้อมูลห้องประชุม
-      const roomsResponse = await fetch('/api/admin/rooms');
-      if (roomsResponse.ok) {
-        const roomsData = await roomsResponse.json();
-        setRooms(roomsData);
-      }
-
-      // รีเซ็ตฟอร์ม
-      setForm({
-        name: '',
-        room_number: '',
-        capacity: '',
-        description: ''
-      });
-      setEditingRoom(null);
-      setShowAddForm(false);
-
-      // ซ่อนข้อความสำเร็จหลังจาก 3 วินาที
-      setTimeout(() => {
-        setSuccess('');
-      }, 3000);
-
-    } catch (err) {
-      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-    } finally {
-      setSubmitting(false);
-    }
+      const url = editingRoom ? `/api/admin/rooms/${editingRoom.room_id}` : '/api/admin/rooms';
+      const res = await fetch(url, { method: editingRoom ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'เกิดข้อผิดพลาด'); setSubmitting(false); return; }
+      setSuccess(editingRoom ? 'อัปเดตสำเร็จ' : 'เพิ่มห้องสำเร็จ');
+      const r2 = await fetch('/api/admin/rooms'); if (r2.ok) setRooms(await r2.json());
+      setForm({ name: '', room_number: '', capacity: '', description: '' }); setEditingRoom(null); setShowAddForm(false);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch { setError('เกิดข้อผิดพลาดในการเชื่อมต่อ'); } finally { setSubmitting(false); }
   };
 
-  const handleEdit = (room: Room) => {
-    setEditingRoom(room);
-    setForm({
-      name: room.name,
-      room_number: room.room_number,
-      capacity: room.capacity,
-      description: room.description
-    });
-    setShowAddForm(true);
-  };
-
-  const handleCancel = () => {
-    setEditingRoom(null);
-    setShowAddForm(false);
-    setForm({
-      name: '',
-      room_number: '',
-      capacity: '',
-      description: ''
-    });
-    setError('');
-  };
-
+  const handleEdit = (room: Room) => { setEditingRoom(room); setForm({ name: room.name, room_number: room.room_number, capacity: room.capacity, description: room.description }); setShowAddForm(true); };
+  const handleCancel = () => { setEditingRoom(null); setShowAddForm(false); setForm({ name: '', room_number: '', capacity: '', description: '' }); setError(''); };
   const handleDelete = async (roomId: number) => {
-    if (!confirm('คุณต้องการลบห้องประชุมนี้หรือไม่?')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/admin/rooms/${roomId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        setSuccess('ลบห้องประชุมสำเร็จ');
-        // รีเฟรชข้อมูลห้องประชุม
-        const roomsResponse = await fetch('/api/admin/rooms');
-        if (roomsResponse.ok) {
-          const roomsData = await roomsResponse.json();
-          setRooms(roomsData);
-        }
-        setTimeout(() => {
-          setSuccess('');
-        }, 3000);
-      } else {
-        const data = await response.json();
-        setError(data.error || 'เกิดข้อผิดพลาดในการลบห้องประชุม');
-      }
-    } catch (error) {
-      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-    }
+    if (!confirm('คุณต้องการลบห้องประชุมนี้หรือไม่?')) return;
+    try { const r = await fetch(`/api/admin/rooms/${roomId}`, { method: 'DELETE' }); if (r.ok) { setSuccess('ลบสำเร็จ'); const r2 = await fetch('/api/admin/rooms'); if (r2.ok) setRooms(await r2.json()); setTimeout(() => setSuccess(''), 3000); } else { const d = await r.json(); setError(d.error || 'เกิดข้อผิดพลาด'); } } catch { setError('เกิดข้อผิดพลาด'); }
   };
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setForm(prev => ({ ...prev, [e.target.name]: e.target.value })); };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">กำลังโหลดข้อมูล...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <span className="text-red-500 text-lg">{error}</span>
-      </div>
-    );
-  }
+  if (loading) return (<div className="min-h-screen bg-[#1a1d21] flex items-center justify-center"><div className="text-center"><div className="relative w-16 h-16 mx-auto mb-4"><div className="absolute inset-0 rounded-full border-4 border-indigo-500/20"></div><div className="absolute inset-0 rounded-full border-4 border-transparent border-t-indigo-500 animate-spin"></div></div><p className="text-gray-400 text-sm">กำลังโหลดข้อมูล...</p></div></div>);
+  if (error && !rooms.length) return (<div className="min-h-screen bg-[#1a1d21] flex items-center justify-center"><span className="text-red-400">{error}</span></div>);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex">
-      {/* Sidebar */}
-      <div className="hidden md:block">
-        <div className="w-64">
-          <AdminSidebar />
-        </div>
-      </div>
-      {/* Main Content */}
-      <div className="flex-1 ml-0 md:ml-64 px-12 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <Link 
-            href="/admin/dashboard" 
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors duration-200 font-medium"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            กลับไปแดชบอร์ด
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-800">จัดการห้องประชุม</h1>
+    <div className="min-h-screen bg-[#1a1d21] flex">
+      <AdminSidebar />
+      <div className="flex-1 ml-0 sm:ml-72 p-4 sm:p-8 transition-all duration-300">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3"><span className="w-2 h-8 bg-purple-500 rounded-full"></span>จัดการห้องประชุม</h1>
+            <p className="text-gray-500 mt-1 ml-5 text-sm">เพิ่ม แก้ไขห้องประชุม • ทั้งหมด {rooms.length} ห้อง</p>
+          </div>
+          {user?.role === 'admin' && !showAddForm && <button onClick={() => setShowAddForm(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-indigo-500/20 text-sm"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>เพิ่มห้อง</button>}
         </div>
 
-        {/* Add Room Button */}
-        {user?.role === 'admin' && (
-          <div className="mb-8">
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-medium flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              เพิ่มห้องประชุม
-            </button>
-          </div>
-        )}
+        {success && <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm">{success}</div>}
+        {error && rooms.length > 0 && <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">{error}</div>}
 
-        {/* Messages */}
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex">
-              <svg className="w-5 h-5 text-green-400 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <p className="text-green-600 text-sm">{success}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Add/Edit Form */}
         {user?.role === 'admin' && showAddForm && (
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">
-              {editingRoom ? 'แก้ไขห้องประชุม' : 'เพิ่มห้องประชุมใหม่'}
-            </h2>
+          <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 p-6 mb-8">
+            <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-3"><span className="w-1.5 h-6 rounded-full bg-indigo-500"></span>{editingRoom ? 'แก้ไข' : 'เพิ่มห้องใหม่'}</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    ชื่อห้องประชุม *
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    value={form.name}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="เช่น ห้องประชุมใหญ่"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    เลขห้อง *
-                  </label>
-                  <input
-                    type="text"
-                    name="room_number"
-                    required
-                    value={form.room_number}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="เช่น 101"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    ความจุ *
-                  </label>
-                  <input
-                    type="text"
-                    name="capacity"
-                    required
-                    value={form.capacity}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="เช่น 20 คน"
-                  />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div><label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">ชื่อห้อง *</label><input type="text" name="name" required value={form.name} onChange={handleInputChange} className="w-full px-4 py-3 bg-[#1a1d21] border border-gray-700 rounded-xl text-gray-200 placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" placeholder="เช่น ห้องประชุมใหญ่" /></div>
+                <div><label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">เลขห้อง *</label><input type="text" name="room_number" required value={form.room_number} onChange={handleInputChange} className="w-full px-4 py-3 bg-[#1a1d21] border border-gray-700 rounded-xl text-gray-200 placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" placeholder="เช่น 101" /></div>
+                <div><label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">ความจุ *</label><input type="text" name="capacity" required value={form.capacity} onChange={handleInputChange} className="w-full px-4 py-3 bg-[#1a1d21] border border-gray-700 rounded-xl text-gray-200 placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" placeholder="เช่น 20" /></div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  รายละเอียด
-                </label>
-                <textarea
-                  name="description"
-                  rows={3}
-                  value={form.description}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
-                  placeholder="รายละเอียดเพิ่มเติมเกี่ยวกับห้องประชุม"
-                />
-              </div>
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-medium flex items-center gap-2"
-                >
-                  {submitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      กำลังบันทึก...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      {editingRoom ? 'อัปเดต' : 'เพิ่มห้องประชุม'}
-                    </>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-medium"
-                >
-                  ยกเลิก
-                </button>
+              <div><label className="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">รายละเอียด</label><textarea name="description" rows={3} value={form.description} onChange={handleInputChange} className="w-full px-4 py-3 bg-[#1a1d21] border border-gray-700 rounded-xl text-gray-200 placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm resize-none" placeholder="รายละเอียดเพิ่มเติม" /></div>
+              <div className="flex gap-3">
+                <button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-xl font-medium flex items-center gap-2 text-sm">{submitting ? 'กำลังบันทึก...' : editingRoom ? 'อัปเดต' : 'เพิ่มห้อง'}</button>
+                <button type="button" onClick={handleCancel} className="bg-gray-700 hover:bg-gray-600 text-gray-300 px-6 py-2.5 rounded-xl font-medium text-sm">ยกเลิก</button>
               </div>
             </form>
           </div>
         )}
 
-        {/* Rooms List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {rooms.length === 0 ? (
-            <div className="col-span-full bg-white rounded-2xl shadow-lg p-8 text-center">
-              <div className="mx-auto h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">ไม่มีห้องประชุม</h3>
-              <p className="text-gray-500">ยังไม่มีห้องประชุมในระบบ</p>
+            <div className="col-span-full bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 p-12 text-center">
+              <div className="mx-auto w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4"><svg className="h-8 w-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" /></svg></div>
+              <h3 className="text-lg font-medium text-gray-300 mb-2">ไม่มีห้องประชุม</h3><p className="text-gray-600">ยังไม่มีห้องประชุมในระบบ</p>
             </div>
-          ) : (
-            rooms.map((room) => (
-              <div key={room.room_id} className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      {room.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-2">ห้อง: {room.room_number}</p>
-                    <p className="text-sm text-gray-600 mb-2">ความจุ: {room.capacity}</p>
-                    {room.description && (
-                      <p className="text-sm text-gray-500">{room.description}</p>
-                    )}
+          ) : rooms.map((room) => (
+            <div key={room.room_id} className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 p-6 hover:border-gray-700 transition-colors group">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-indigo-300 transition-colors">{room.name}</h3>
+                  <div className="space-y-1.5">
+                    <p className="text-sm text-gray-400 flex items-center gap-2"><svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" /></svg>ห้อง: {room.room_number}</p>
+                    <p className="text-sm text-gray-400 flex items-center gap-2"><svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>ความจุ: {room.capacity} คน</p>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    room.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    {room.status === 'active' ? 'ใช้งาน' : 'ไม่ใช้งาน'}
-                  </span>
+                  {room.description && <p className="text-sm text-gray-500 mt-3">{room.description}</p>}
                 </div>
-                {user?.role === 'admin' && (
-                  <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={() => handleEdit(room)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm transition-colors duration-200"
-                    >
-                      แก้ไข
-                    </button>
-                    <button
-                      onClick={() => handleDelete(room.room_id)}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm transition-colors duration-200"
-                    >
-                      ลบ
-                    </button>
-                  </div>
-                )}
+                <span className={`px-2.5 py-1 rounded-lg text-xs font-medium border ${room.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-gray-500/10 text-gray-400 border-gray-500/20'}`}>{room.status === 'active' ? 'ใช้งาน' : 'ไม่ใช้งาน'}</span>
               </div>
-            ))
-          )}
+              {user?.role === 'admin' && (
+                <div className="flex gap-2 mt-4 pt-4 border-t border-gray-800">
+                  <button onClick={() => handleEdit(room)} className="flex-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 px-3 py-2 rounded-xl text-sm font-medium border border-indigo-500/20">แก้ไข</button>
+                  <button onClick={() => handleDelete(room.room_id)} className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-2 rounded-xl text-sm font-medium border border-red-500/20">ลบ</button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>
