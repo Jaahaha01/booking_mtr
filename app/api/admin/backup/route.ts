@@ -221,3 +221,33 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to create backup' }, { status: 500 });
     }
 }
+
+// DELETE: ลบประวัติการสำรองข้อมูล
+export async function DELETE(request: NextRequest) {
+    const adminId = await verifyAdmin();
+    if (!adminId) {
+        return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 });
+    }
+
+    try {
+        const { searchParams } = new URL(request.url);
+        const backupId = searchParams.get('id');
+
+        if (!backupId) {
+            return NextResponse.json({ error: 'กรุณาระบุ ID ของประวัติสำรอง' }, { status: 400 });
+        }
+
+        // ตรวจว่ามี record อยู่จริง
+        const existing = await db`SELECT backup_id FROM backup_logs WHERE backup_id = ${parseInt(backupId)}`;
+        if (!existing || existing.length === 0) {
+            return NextResponse.json({ error: 'ไม่พบประวัติสำรองที่ระบุ' }, { status: 404 });
+        }
+
+        await db`DELETE FROM backup_logs WHERE backup_id = ${parseInt(backupId)}`;
+
+        return NextResponse.json({ success: true, message: 'ลบประวัติสำรองข้อมูลสำเร็จ' });
+    } catch (error) {
+        console.error('Error deleting backup log:', error);
+        return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการลบ' }, { status: 500 });
+    }
+}

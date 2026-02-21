@@ -36,15 +36,21 @@ export default function AdminBackupPage() {
     const [restoreFileName, setRestoreFileName] = useState('');
     const [selectedTables, setSelectedTables] = useState<string[]>(['rooms', 'users', 'room_schedules', 'bookings', 'feedbacks']);
     const [downloading, setDownloading] = useState<number | null>(null);
-    const [searchDate, setSearchDate] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterKeyword, setFilterKeyword] = useState<string>('all');
+    const [deleting, setDeleting] = useState<number | null>(null);
 
-    // กรอง backup logs ตามวันที่ที่ค้นหา
-    const filteredLogs = searchDate
-        ? backupLogs.filter((log) => {
-            const logDate = new Date(log.created_at).toLocaleDateString('en-CA'); // YYYY-MM-DD
-            return logDate === searchDate;
-        })
-        : backupLogs;
+    // กรอง backup logs ตามคำค้นหาและ keyword
+    const filteredLogs = backupLogs.filter((log) => {
+        const matchesKeyword = filterKeyword === 'all' || log.file_name.includes(`_${filterKeyword}_`);
+        if (!matchesKeyword) return false;
+        if (!searchTerm.trim()) return true;
+        const term = searchTerm.toLowerCase();
+        const dateStr = new Date(log.created_at).toLocaleDateString('th-TH');
+        const dateStrEN = new Date(log.created_at).toLocaleDateString('en-CA');
+        const creatorName = log.fname ? `${log.fname} ${log.lname}`.toLowerCase() : '';
+        return log.file_name.toLowerCase().includes(term) || dateStr.includes(term) || dateStrEN.includes(term) || creatorName.includes(term);
+    });
 
     const fetchData = async () => {
         try {
@@ -100,6 +106,26 @@ export default function AdminBackupPage() {
 
         setBackingUp(type);
         try {
+            if (type === 'system') {
+                // สำรองระบบ: ดาวน์โหลด ZIP
+                const res = await fetch('/api/admin/backup/system-zip', { method: 'POST' });
+                if (!res.ok) throw new Error('System backup failed');
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                a.href = url;
+                a.download = `backup_system_${timestamp}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                await fetchData();
+                Swal.fire({ title: 'สำรองระบบสำเร็จ!', html: '<p class="text-gray-300">ไฟล์ ZIP ของระบบทั้งหมดถูกดาวน์โหลดแล้ว</p>', icon: 'success', confirmButtonText: 'ตกลง', confirmButtonColor: '#6366f1', background: '#23272b', color: '#e5e7eb' });
+                setBackingUp(null);
+                return;
+            }
+
             const res = await fetch('/api/admin/backup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -274,6 +300,38 @@ export default function AdminBackupPage() {
         }
     };
 
+    const handleDeleteBackup = async (backupId: number, fileName: string) => {
+        const result = await Swal.fire({
+            title: 'ลบประวัติสำรองข้อมูล',
+            html: `<p class="text-gray-400 text-sm">คุณต้องการลบ <span class="text-white font-mono text-xs">${fileName}</span> หรือไม่?</p>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'ลบ',
+            cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            reverseButtons: true,
+            background: '#23272b',
+            color: '#e5e7eb',
+        });
+        if (!result.isConfirmed) return;
+
+        setDeleting(backupId);
+        try {
+            const res = await fetch(`/api/admin/backup?id=${backupId}`, { method: 'DELETE' });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'ลบไม่สำเร็จ');
+            }
+            await fetchData();
+            Swal.fire({ title: 'ลบสำเร็จ', text: 'ลบประวัติสำรองข้อมูลเรียบร้อย', icon: 'success', confirmButtonText: 'ตกลง', confirmButtonColor: '#6366f1', background: '#23272b', color: '#e5e7eb', timer: 2000 });
+        } catch (err: any) {
+            Swal.fire({ title: 'เกิดข้อผิดพลาด', text: err.message, icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', background: '#23272b', color: '#e5e7eb' });
+        } finally {
+            setDeleting(null);
+        }
+    };
+
     const totalRecords = summary
         ? summary.users + summary.bookings + summary.rooms + summary.room_schedules + summary.feedbacks
         : 0;
@@ -398,12 +456,12 @@ export default function AdminBackupPage() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">สำรองระบบ</h3>
+                            <h3 className="text-xl font-bold text-white mb-2">สำรองระบบ (ZIP)</h3>
                             <p className="text-gray-400 text-sm mb-4 leading-relaxed">
-                                สถิติสรุป การตั้งค่าระบบ และข้อมูลเซิร์ฟเวอร์
+                                สำรองซอร์สโค้ดทั้งหมดเป็นไฟล์ ZIP พร้อมใช้งาน
                             </p>
                             <div className="space-y-2 mb-6">
-                                {['สถิติการจอง (ยืนยัน, รอ, ยกเลิก)', 'การตั้งค่าห้องประชุม', 'ข้อมูลเซิร์ฟเวอร์'].map((item) => (
+                                {['ซอร์สโค้ดทั้งหมดของโปรเจค', 'ไฟล์ตั้งค่า (config, package.json)', 'ไม่รวม node_modules, .next, .env'].map((item) => (
                                     <div key={item} className="flex items-center gap-2 text-sm text-gray-500">
                                         <svg className="w-4 h-4 text-cyan-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                                         {item}
@@ -418,7 +476,7 @@ export default function AdminBackupPage() {
                                 {backingUp === 'system' ? (
                                     <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div> กำลังสำรอง...</>
                                 ) : (
-                                    <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> สำรองระบบ</>
+                                    <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> สำรองเป็น ZIP</>
                                 )}
                             </button>
                         </div>
@@ -558,30 +616,57 @@ export default function AdminBackupPage() {
 
                 {/* Backup History */}
                 <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 p-6 mb-8">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                        <h3 className="text-lg font-bold text-white flex items-center gap-3">
-                            <span className="w-1.5 h-6 rounded-full bg-purple-500"></span>
-                            ประวัติการสำรองข้อมูล
-                            {backupLogs.length > 0 && (
-                                <span className="text-xs font-normal text-gray-500 ml-1">
-                                    ({filteredLogs.length}{searchDate ? `/${backupLogs.length}` : ''} รายการ)
-                                </span>
-                            )}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                            <div className="relative">
+                    <div className="flex flex-col gap-4 mb-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <h3 className="text-lg font-bold text-white flex items-center gap-3">
+                                <span className="w-1.5 h-6 rounded-full bg-purple-500"></span>
+                                ประวัติการสำรองข้อมูล
+                                {backupLogs.length > 0 && (
+                                    <span className="text-xs font-normal text-gray-500 ml-1">
+                                        ({filteredLogs.length}{(searchTerm || filterKeyword !== 'all') ? `/${backupLogs.length}` : ''} รายการ)
+                                    </span>
+                                )}
+                            </h3>
+                            <div className="relative w-full sm:w-auto">
+                                <svg className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                 <input
-                                    type="date"
-                                    value={searchDate}
-                                    onChange={(e) => setSearchDate(e.target.value)}
-                                    className="bg-[#1a1d21] border border-gray-700 rounded-xl px-4 py-2 text-sm text-gray-300 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all duration-200 [color-scheme:dark]"
-                                    title="ค้นหาตามวันที่"
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full sm:w-72 bg-[#1a1d21] border border-gray-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all duration-200"
+                                    placeholder="ค้นหาด้วยชื่อไฟล์, วันที่, หรือชื่อผู้สำรอง..."
                                 />
                             </div>
-                            {searchDate && (
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs text-gray-500 font-medium mr-1">ประเภท:</span>
+                            {[
+                                { key: 'all', label: 'ทั้งหมด' },
+                                { key: 'database', label: 'ฐานข้อมูล', color: 'indigo' },
+                                { key: 'system', label: 'ระบบ', color: 'cyan' },
+                                { key: 'full', label: 'ข้อมูลทั้งหมด', color: 'emerald' },
+                            ].map(({ key, label, color }) => (
                                 <button
-                                    onClick={() => setSearchDate('')}
-                                    className="px-3 py-2 rounded-xl text-xs font-medium bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700 hover:text-gray-300 transition-all duration-200 flex items-center gap-1.5"
+                                    key={key}
+                                    onClick={() => setFilterKeyword(key)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${filterKeyword === key
+                                        ? key === 'all'
+                                            ? 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+                                            : key === 'database'
+                                                ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'
+                                                : key === 'system'
+                                                    ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30'
+                                                    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                        : 'bg-gray-800/50 text-gray-500 border-gray-700 hover:text-gray-300 hover:border-gray-600'
+                                        }`}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                            {(searchTerm || filterKeyword !== 'all') && (
+                                <button
+                                    onClick={() => { setSearchTerm(''); setFilterKeyword('all'); }}
+                                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700 hover:text-gray-300 transition-all duration-200 flex items-center gap-1.5 ml-auto"
                                 >
                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                     ล้างตัวกรอง
@@ -601,16 +686,23 @@ export default function AdminBackupPage() {
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สำรองโดย</th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่</th>
-                                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ดาวน์โหลด</th>
+                                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">การดำเนินการ</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {backupLogs.map((log) => (
+                                        {filteredLogs.map((log) => (
                                             <tr key={log.backup_id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
                                                 <td className="px-4 py-3">
                                                     <div className="flex items-center gap-2">
-                                                        <svg className="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                        {log.file_name.endsWith('.zip') ? (
+                                                            <svg className="w-4 h-4 text-cyan-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                                                        ) : (
+                                                            <svg className="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                        )}
                                                         <span className="text-gray-300 text-sm font-mono truncate max-w-[250px]">{log.file_name}</span>
+                                                        {log.file_name.includes('_database_') && <span className="px-1.5 py-0.5 text-[10px] font-medium bg-indigo-500/10 text-indigo-400 rounded border border-indigo-500/20">DB</span>}
+                                                        {log.file_name.includes('_system_') && <span className="px-1.5 py-0.5 text-[10px] font-medium bg-cyan-500/10 text-cyan-400 rounded border border-cyan-500/20">SYS</span>}
+                                                        {log.file_name.includes('_full_') && <span className="px-1.5 py-0.5 text-[10px] font-medium bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20">FULL</span>}
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-gray-400">{log.file_size || '-'}</td>
@@ -632,23 +724,39 @@ export default function AdminBackupPage() {
                                                 <td className="px-4 py-3 text-sm text-gray-500">
                                                     {new Date(log.created_at).toLocaleString('th-TH')}
                                                 </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    {log.has_data && log.status === 'success' ? (
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        {log.has_data && log.status === 'success' && !log.file_name.endsWith('.zip') ? (
+                                                            <button
+                                                                onClick={() => handleDownloadOld(log.backup_id, log.file_name)}
+                                                                disabled={downloading !== null}
+                                                                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                                            >
+                                                                {downloading === log.backup_id ? (
+                                                                    <div className="w-3 h-3 rounded-full border-2 border-indigo-400/30 border-t-indigo-400 animate-spin"></div>
+                                                                ) : (
+                                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                                )}
+                                                                ดาวน์โหลด
+                                                            </button>
+                                                        ) : !log.file_name.endsWith('.zip') ? (
+                                                            <span className="text-gray-700 text-xs">—</span>
+                                                        ) : (
+                                                            <span className="text-gray-600 text-xs italic">ZIP</span>
+                                                        )}
                                                         <button
-                                                            onClick={() => handleDownloadOld(log.backup_id, log.file_name)}
-                                                            disabled={downloading !== null}
-                                                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 mx-auto"
+                                                            onClick={() => handleDeleteBackup(log.backup_id, log.file_name)}
+                                                            disabled={deleting === log.backup_id}
+                                                            className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                                                         >
-                                                            {downloading === log.backup_id ? (
-                                                                <div className="w-3 h-3 rounded-full border-2 border-indigo-400/30 border-t-indigo-400 animate-spin"></div>
+                                                            {deleting === log.backup_id ? (
+                                                                <div className="w-3 h-3 rounded-full border-2 border-red-400/30 border-t-red-400 animate-spin"></div>
                                                             ) : (
-                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                             )}
-                                                            ดาวน์โหลด
+                                                            ลบ
                                                         </button>
-                                                    ) : (
-                                                        <span className="text-gray-700 text-xs">—</span>
-                                                    )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -660,10 +768,10 @@ export default function AdminBackupPage() {
                                 <div className="w-14 h-14 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
                                     <svg className="w-7 h-7 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                 </div>
-                                <h3 className="text-sm font-medium text-gray-300">ไม่พบข้อมูลสำรองในวันที่เลือก</h3>
-                                <p className="mt-1 text-sm text-gray-600">{new Date(searchDate + 'T00:00:00').toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                <h3 className="text-sm font-medium text-gray-300">ไม่พบข้อมูลสำรองที่ตรงกับเงื่อนไข</h3>
+                                <p className="mt-1 text-sm text-gray-600">ลองเปลี่ยนคำค้นหาหรือตัวกรองประเภท</p>
                                 <button
-                                    onClick={() => setSearchDate('')}
+                                    onClick={() => { setSearchTerm(''); setFilterKeyword('all'); }}
                                     className="mt-3 text-xs text-purple-400 hover:text-purple-300 transition-colors"
                                 >
                                     แสดงทั้งหมด
@@ -690,7 +798,7 @@ export default function AdminBackupPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[
                             { icon: '🔒', title: 'ความปลอดภัย', desc: 'ไฟล์สำรองรวมรหัสผ่าน (bcrypt) เก็บไฟล์ไว้ในที่ปลอดภัยเท่านั้น' },
-                            { icon: '📁', title: 'รูปแบบไฟล์', desc: 'ข้อมูลจะถูกสำรองในรูปแบบ JSON ที่สามารถอ่านและนำเข้าได้ง่าย' },
+                            { icon: '📁', title: 'รูปแบบไฟล์', desc: 'ฐานข้อมูลสำรองเป็น JSON, ระบบสำรองเป็น ZIP ที่รวมซอร์สโค้ดทั้งหมด' },
                             { icon: '📅', title: 'ความถี่', desc: 'แนะนำให้สำรองข้อมูลอย่างน้อยสัปดาห์ละ 1 ครั้ง' },
                             { icon: '💾', title: 'การจัดเก็บ', desc: 'เก็บไฟล์สำรองไว้ในที่ปลอดภัย เช่น Google Drive หรือ OneDrive' },
                         ].map(({ icon, title, desc }) => (

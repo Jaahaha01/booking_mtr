@@ -66,7 +66,12 @@ export default function AdminUsersPage() {
 
   const handleUpdateUser = async (userId: number, field: string, value: any) => {
     const targetUser = users.find(u => u.user_id === userId);
-    if (targetUser && (targetUser.role === 'staff' || targetUser.role === 'admin')) {
+    // admin สามารถแก้ไข staff ได้ แต่ staff ไม่สามารถแก้ไข staff/admin ได้
+    if (targetUser && targetUser.role === 'admin') {
+      setError('ไม่สามารถแก้ไขข้อมูลผู้ดูแลระบบได้');
+      return;
+    }
+    if (user?.role === 'staff' && targetUser && (targetUser.role === 'staff' || targetUser.role === 'admin')) {
       setError('คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลเจ้าหน้าที่หรือผู้ดูแลระบบ');
       return;
     }
@@ -93,7 +98,13 @@ export default function AdminUsersPage() {
 
   const handleDeleteUser = async (userId: number) => {
     const targetUser = users.find(u => u.user_id === userId);
-    if (targetUser && (targetUser.role === 'staff' || targetUser.role === 'admin')) {
+    // ป้องกันการลบ admin
+    if (targetUser && targetUser.role === 'admin') {
+      Swal.fire({ title: 'ไม่สามารถลบได้', text: 'ไม่สามารถลบผู้ดูแลระบบได้', icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', width: 'min(90vw, 500px)', background: '#23272b', color: '#e5e7eb' });
+      return;
+    }
+    // staff ไม่สามารถลบ staff/admin ได้
+    if (user?.role === 'staff' && targetUser && (targetUser.role === 'staff' || targetUser.role === 'admin')) {
       Swal.fire({ title: 'ไม่สามารถลบได้', text: 'คุณไม่มีสิทธิ์ในการลบเจ้าหน้าที่หรือผู้ดูแลระบบ', icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', width: 'min(90vw, 500px)', background: '#23272b', color: '#e5e7eb' });
       return;
     }
@@ -118,8 +129,14 @@ export default function AdminUsersPage() {
   const handleResetPassword = async (userId: number) => {
     const targetUser = users.find(u => u.user_id === userId);
     if (!targetUser) return;
-    if (targetUser.role === 'staff' || targetUser.role === 'admin') {
-      Swal.fire({ title: 'ไม่สามารถรีเซ็ตได้', text: 'ไม่สามารถรีเซ็ตรหัสผ่านเจ้าหน้าที่หรือผู้ดูแลระบบ', icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', background: '#23272b', color: '#e5e7eb' });
+    // ป้องกันการรีเซ็ตรหัสผ่าน admin
+    if (targetUser.role === 'admin') {
+      Swal.fire({ title: 'ไม่สามารถรีเซ็ตได้', text: 'ไม่สามารถรีเซ็ตรหัสผ่านผู้ดูแลระบบ', icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', background: '#23272b', color: '#e5e7eb' });
+      return;
+    }
+    // staff ไม่สามารถรีเซ็ตรหัสผ่าน staff/admin ได้
+    if (user?.role === 'staff' && (targetUser.role === 'staff' || targetUser.role === 'admin')) {
+      Swal.fire({ title: 'ไม่สามารถรีเซ็ตได้', text: 'คุณไม่มีสิทธิ์ในการรีเซ็ตรหัสผ่านเจ้าหน้าที่หรือผู้ดูแลระบบ', icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', background: '#23272b', color: '#e5e7eb' });
       return;
     }
 
@@ -164,14 +181,16 @@ export default function AdminUsersPage() {
       setUpdating(null);
     }
   };
-  const filteredUsers = users.filter(user => {
-    if (user.role === 'staff' || user.role === 'admin') return false;
+  const filteredUsers = users.filter(u => {
+    // admin เห็นได้ทุกคนยกเว้น admin คนอื่น, staff เห็นได้เฉพาะ user ทั่วไป
+    if (u.role === 'admin') return false;
+    if (user?.role === 'staff' && u.role === 'staff') return false;
     const matchesSearch =
-      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `${user.fname} ${user.lname}`.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = filterRole === 'all' || user.role === filterRole;
-    const matchesStatus = filterStatus === 'all' || user.verification_status === filterStatus;
+      u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `${u.fname} ${u.lname}`.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = filterRole === 'all' || u.role === filterRole;
+    const matchesStatus = filterStatus === 'all' || u.verification_status === filterStatus;
     return matchesSearch && matchesRole && matchesStatus;
   });
 
@@ -238,6 +257,7 @@ export default function AdminUsersPage() {
                 <option value="user">ผู้ใช้</option>
                 <option value="student">นักศึกษา</option>
                 <option value="teacher">อาจารย์</option>
+                {user?.role === 'admin' && <option value="staff">เจ้าหน้าที่</option>}
               </select>
             </div>
             <div>
@@ -268,17 +288,24 @@ export default function AdminUsersPage() {
               </thead>
               <tbody>
                 {filteredUsers.map((userItem) => (
-                  <tr key={userItem.user_id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+                  <tr key={userItem.user_id} className={`border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors ${userItem.role === 'staff' ? 'border-l-2 border-l-cyan-500/60 bg-cyan-500/5' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         {userItem.image ? (
                           <img src={userItem.image} alt={`${userItem.fname} ${userItem.lname}`} className="w-10 h-10 rounded-xl object-cover border border-gray-700" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }} />
                         ) : null}
-                        <div className={`w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center ${userItem.image ? 'hidden' : ''}`}>
-                          <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        <div className={`w-10 h-10 ${userItem.role === 'staff' ? 'bg-cyan-500/20' : 'bg-indigo-500/20'} rounded-xl flex items-center justify-center ${userItem.image ? 'hidden' : ''}`}>
+                          <svg className={`w-5 h-5 ${userItem.role === 'staff' ? 'text-cyan-400' : 'text-indigo-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-200">{userItem.fname} {userItem.lname}</div>
+                          <div className="text-sm font-medium text-gray-200 flex items-center gap-2">
+                            {userItem.fname} {userItem.lname}
+                            {userItem.role === 'staff' && (
+                              <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 rounded-full border border-cyan-500/20">
+                                เจ้าหน้าที่
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-gray-500">{userItem.email}</div>
                           <div className="text-xs text-gray-600">@{userItem.username}</div>
                         </div>
@@ -384,15 +411,15 @@ export default function AdminUsersPage() {
         {/* Summary Cards */}
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'ผู้ใช้ทั้งหมด', value: users.length, color: 'indigo', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z' },
+            { label: 'ผู้ใช้ทั้งหมด', value: users.filter(u => u.role !== 'admin' && u.role !== 'staff').length, color: 'indigo', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z' },
+            { label: 'เจ้าหน้าที่', value: users.filter(u => u.role === 'staff').length, color: 'cyan', icon: 'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
             { label: 'ยืนยันแล้ว', value: users.filter(u => u.verification_status === 'approved').length, color: 'emerald', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
             { label: 'รอยืนยัน', value: users.filter(u => u.verification_status === 'pending').length, color: 'amber', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-            { label: 'ผู้ดูแลระบบ', value: users.filter(u => u.role === 'admin').length, color: 'purple', icon: 'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
           ].map(({ label, value, color, icon }) => (
             <div key={label} className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 p-5">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl bg-${color}-500/10 flex items-center justify-center`} style={{ backgroundColor: color === 'indigo' ? 'rgba(99,102,241,0.1)' : color === 'emerald' ? 'rgba(16,185,129,0.1)' : color === 'amber' ? 'rgba(245,158,11,0.1)' : 'rgba(139,92,246,0.1)' }}>
-                  <svg className="w-5 h-5" style={{ color: color === 'indigo' ? '#818cf8' : color === 'emerald' ? '#34d399' : color === 'amber' ? '#fbbf24' : '#a78bfa' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={icon} /></svg>
+                <div className={`w-10 h-10 rounded-xl bg-${color}-500/10 flex items-center justify-center`} style={{ backgroundColor: color === 'indigo' ? 'rgba(99,102,241,0.1)' : color === 'cyan' ? 'rgba(6,182,212,0.1)' : color === 'emerald' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)' }}>
+                  <svg className="w-5 h-5" style={{ color: color === 'indigo' ? '#818cf8' : color === 'cyan' ? '#22d3ee' : color === 'emerald' ? '#34d399' : '#fbbf24' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={icon} /></svg>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 font-medium">{label}</p>

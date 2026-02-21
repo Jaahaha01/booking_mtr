@@ -11,7 +11,7 @@ export async function PUT(
   const cookieStore = await cookies();
   const adminId = cookieStore.get('user_id')?.value;
   const { id: userId } = await params;
-  
+
   if (!adminId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -22,6 +22,21 @@ export async function PUT(
     const admin = adminRows?.[0];
     if (!admin || (admin.role !== 'admin' && admin.role !== 'staff')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // ตรวจสอบสิทธิ์การแก้ไขตาม role ของ target user
+    const targetRows = await db`SELECT role FROM users WHERE user_id = ${userId}`;
+    const target = targetRows?.[0];
+    if (!target) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    // ไม่อนุญาตแก้ไข admin
+    if (target.role === 'admin') {
+      return NextResponse.json({ error: 'ไม่สามารถแก้ไขข้อมูลผู้ดูแลระบบได้' }, { status: 403 });
+    }
+    // staff ไม่สามารถแก้ไข staff หรือ admin
+    if (admin.role === 'staff' && (target.role === 'staff' || target.role === 'admin')) {
+      return NextResponse.json({ error: 'คุณไม่มีสิทธิ์ในการแก้ไขเจ้าหน้าที่หรือผู้ดูแลระบบ' }, { status: 403 });
     }
 
     const body = await req.json();
@@ -58,7 +73,7 @@ export async function DELETE(
   const cookieStore = await cookies();
   const adminId = cookieStore.get('user_id')?.value;
   const { id: userId } = await params;
-  
+
   if (!adminId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -72,6 +87,21 @@ export async function DELETE(
     // ป้องกันการลบตัวเอง
     if (adminId === userId) {
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 });
+    }
+
+    // ตรวจสอบสิทธิ์การลบตาม role ของ target user
+    const targetRows = await db`SELECT role FROM users WHERE user_id = ${userId}`;
+    const target = targetRows?.[0];
+    if (!target) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    // ไม่อนุญาตลบ admin
+    if (target.role === 'admin') {
+      return NextResponse.json({ error: 'ไม่สามารถลบผู้ดูแลระบบได้' }, { status: 403 });
+    }
+    // staff ไม่สามารถลบ staff หรือ admin
+    if (admin.role === 'staff' && (target.role === 'staff' || target.role === 'admin')) {
+      return NextResponse.json({ error: 'คุณไม่มีสิทธิ์ในการลบเจ้าหน้าที่หรือผู้ดูแลระบบ' }, { status: 403 });
     }
 
     // ลบการจองทั้งหมดของผู้ใช้ก่อน
