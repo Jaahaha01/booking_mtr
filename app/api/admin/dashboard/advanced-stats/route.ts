@@ -1,9 +1,24 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+    // ตรวจสอบสิทธิ์ - เฉพาะ admin เท่านั้น (staff ไม่สามารถดูสถิติได้)
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('user_id')?.value;
+
+    if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userRows = await db`SELECT role FROM users WHERE user_id = ${userId}`;
+    const user = userRows?.[0];
+    if (!user || user.role !== 'admin') {
+        return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 });
+    }
+
     try {
         // 1. Get Room Stats for Pie Chart (Bookings per room) - use name as label
         const roomStats = await db`

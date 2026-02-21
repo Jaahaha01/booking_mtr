@@ -129,7 +129,13 @@ export default function AdminSidebar() {
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto px-3 space-y-0.5 scrollbar-thin scrollbar-thumb-gray-700">
         {sidebarLinks
-          .filter(link => !(link.href === '/admin/rooms' && user?.role === 'staff'))
+          .filter(link => {
+            if (user?.role === 'staff') {
+              // Staff ไม่สามารถเข้าถึง: แดชบอร์ด (สถิติ), จัดการห้องประชุม
+              if (link.href === '/admin/dashboard' || link.href === '/admin/rooms') return false;
+            }
+            return true;
+          })
           .map((link) => {
             const isActive = pathname === link.href;
 
