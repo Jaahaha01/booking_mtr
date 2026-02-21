@@ -242,9 +242,9 @@ export async function POST(req: NextRequest) {
     // ตรวจสอบกับ room_schedules (logic ทับซ้อนแบบเดียวกับ booking)
     const conflictingSchedules = await db`
       SELECT * FROM room_schedules
-      WHERE room_id = ${room_id} AND day_of_week = ${bookingDate.getDay()}
+      WHERE room_id = ${room_id} AND day_of_week = ${bookingDay}
         AND (
-          start_time < ${bookingEndTime} AND end_time > ${bookingStartTime}
+          start_time < ${bookingEndTime}::time AND end_time > ${bookingStartTime}::time
         )
     `;
 

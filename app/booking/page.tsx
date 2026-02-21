@@ -96,6 +96,8 @@ function BookingContent() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   // เก็บ booking ของห้องที่เลือกในวันที่เลือก
   const [roomBookings, setRoomBookings] = useState<any[]>([]);
+  // เก็บตารางเรียนของห้องที่เลือกในวันที่เลือก
+  const [roomSchedules, setRoomSchedules] = useState<any[]>([]);
 
   useEffect(() => {
     const checkAuthAndLoad = async () => {
@@ -341,6 +343,7 @@ function BookingContent() {
     if (!form.room_id) {
       setBookedDates([]);
       setRoomBookings([]);
+      setRoomSchedules([]);
       return;
     }
     fetch('/api/bookings')
@@ -376,6 +379,21 @@ function BookingContent() {
           setRoomBookings([]);
         }
       });
+
+    // ดึงตารางเรียนของห้องที่เลือก
+    fetch(`/api/room-schedules?room_id=${form.room_id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (selectedDate) {
+          const daysMap = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+          const dayName = daysMap[selectedDate.getDay()];
+          const filtered = (Array.isArray(data) ? data : []).filter((s: any) => s.day_of_week === dayName);
+          setRoomSchedules(filtered);
+        } else {
+          setRoomSchedules([]);
+        }
+      })
+      .catch(() => setRoomSchedules([]));
   }, [form.room_id, selectedDate]);
 
   // ฟังก์ชันช่วยตรวจสอบว่าช่วงเวลาทับกับ booking ที่มีอยู่หรือไม่
@@ -386,32 +404,58 @@ function BookingContent() {
     );
   }
 
-  // ฟังก์ชันช่วยสำหรับ logic disable time slot ตาม booking ที่มีอยู่ในห้องนั้น
+  // ฟังก์ชันช่วยตรวจว่าช่วงเวลาใด ๆ ทับกับตารางเรียนหรือไม่
+  function isScheduleOverlap(slotStart: string, slotEnd: string) {
+    // slotStart/slotEnd เป็น "HH:mm" เช่น "08:00", "12:00"
+    for (const s of roomSchedules) {
+      const schStart = (s.start_time || '').substring(0, 5); // "08:00"
+      const schEnd = (s.end_time || '').substring(0, 5);     // "12:00"
+      // overlap: slotStart < schEnd && slotEnd > schStart
+      if (slotStart < schEnd && slotEnd > schStart) return true;
+    }
+    return false;
+  }
+
+  // ฟังก์ชันช่วยสำหรับ logic disable time slot ตาม booking และตารางเรียนที่มีอยู่ในห้องนั้น
   function getDisabledSlots() {
-    // ถ้าไม่มี booking ในห้องนี้วันนี้เลย เปิดทุก slot
-    if (!roomBookings.length) return { morning: false, afternoon: false, fullday: false };
     let disableMorning = false, disableAfternoon = false, disableFullDay = false;
+
+    // ตรวจสอบจาก bookings
     for (const b of roomBookings) {
       const start = b.start.slice(11, 16);
       const end = b.end.slice(11, 16);
-      // Full day booking disables all slots
       if (start === '08:00' && end === '17:00') {
         disableMorning = true;
         disableAfternoon = true;
         disableFullDay = true;
         break;
       }
-      // Morning booking disables morning and full day
       if (start === '08:00' && end === '12:00') {
         disableMorning = true;
         disableFullDay = true;
       }
-      // Afternoon booking disables afternoon and full day
       if (start === '13:00' && end === '17:00') {
         disableAfternoon = true;
         disableFullDay = true;
       }
     }
+
+    // ตรวจสอบจากตารางเรียน (room_schedules)
+    if (roomSchedules.length > 0) {
+      if (isScheduleOverlap('08:00', '12:00')) {
+        disableMorning = true;
+        disableFullDay = true;
+      }
+      if (isScheduleOverlap('13:00', '17:00')) {
+        disableAfternoon = true;
+        disableFullDay = true;
+      }
+      // ถ้าทั้งเช้าและบ่ายทับ → ทั้งวันก็ทับ
+      if (disableMorning && disableAfternoon) {
+        disableFullDay = true;
+      }
+    }
+
     return { morning: disableMorning, afternoon: disableAfternoon, fullday: disableFullDay };
   }
 
@@ -596,6 +640,23 @@ function BookingContent() {
                   {form.timeSlot && form.timeSlot !== 'custom' && form.start && form.end && (
                     <div className="mt-2 text-sm text-gray-700">
                       <span>เริ่ม: {form.start.replace('T', ' ')} | สิ้นสุด: {form.end.replace('T', ' ')}</span>
+                    </div>
+                  )}
+                  {/* แสดงตารางเรียนที่ทับกับวันที่เลือก */}
+                  {roomSchedules.length > 0 && selectedDate && (
+                    <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-xl">
+                      <div className="flex items-center gap-2 mb-2">
+                        <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                        <span className="text-xs font-semibold text-orange-700">ตารางเรียนในวันนี้ (ไม่สามารถจองช่วงเวลานี้ได้)</span>
+                      </div>
+                      <div className="space-y-1">
+                        {roomSchedules.map((s: any, idx: number) => (
+                          <div key={idx} className="flex items-center gap-2 text-xs text-orange-800">
+                            <span className="font-medium">{(s.start_time || '').substring(0, 5)} - {(s.end_time || '').substring(0, 5)}</span>
+                            <span className="text-orange-600">({s.subject})</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
