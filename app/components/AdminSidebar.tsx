@@ -131,8 +131,8 @@ export default function AdminSidebar() {
         {sidebarLinks
           .filter(link => {
             if (user?.role === 'staff') {
-              // Staff ไม่สามารถเข้าถึง: แดชบอร์ด (สถิติ), จัดการห้องประชุม
-              if (link.href === '/admin/dashboard' || link.href === '/admin/rooms') return false;
+              // Staff ไม่สามารถเข้าถึง: จัดการห้องประชุม
+              if (link.href === '/admin/rooms') return false;
             }
             return true;
           })

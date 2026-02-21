@@ -26,12 +26,8 @@ export default function AdminDashboardPage() {
         const profileRes = await fetch('/api/profile');
         if (!profileRes.ok) throw new Error('Unauthorized');
         const userData = await profileRes.json();
-        if (userData.role !== 'admin') {
-          if (userData.role === 'staff') {
-            router.push('/admin/bookings');
-          } else {
-            router.push('/');
-          }
+        if (userData.role !== 'admin' && userData.role !== 'staff') {
+          router.push('/');
           return;
         }
         setUser(userData);

@@ -13,10 +13,11 @@ export async function GET() {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // ตรวจสอบสิทธิ์ admin หรือ staff
     const userRows = await db`SELECT role FROM users WHERE user_id = ${userId}`;
     const user = userRows?.[0];
-    if (!user || user.role !== 'admin') {
-        return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 });
+    if (!user || (user.role !== 'admin' && user.role !== 'staff')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     try {
