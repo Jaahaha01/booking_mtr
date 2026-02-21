@@ -30,14 +30,18 @@ export async function GET(request: NextRequest) {
 
         if (backupId) {
             const rows = await db`SELECT file_name, file_url FROM backup_logs WHERE backup_id = ${parseInt(backupId)}`;
-            if (!rows || rows.length === 0 || !rows[0].file_url) {
-                return NextResponse.json({ error: 'ไม่พบข้อมูลสำรอง' }, { status: 404 });
+            if (!rows || rows.length === 0) {
+                return NextResponse.json({ error: 'ไม่พบข้อมูลสำรองที่ระบุ' }, { status: 404 });
+            }
+            if (!rows[0].file_url) {
+                return NextResponse.json({ error: 'ไม่พบเนื้อหาสำรอง (file_url ว่างเปล่า)' }, { status: 404 });
             }
             try {
                 const backupContent = JSON.parse(rows[0].file_url);
                 return NextResponse.json({ success: true, backup: backupContent, fileName: rows[0].file_name });
-            } catch {
-                return NextResponse.json({ error: 'ข้อมูลสำรองเสียหาย' }, { status: 500 });
+            } catch (parseError) {
+                console.error('Error parsing backup data:', parseError, 'Data length:', rows[0].file_url?.length, 'First 200 chars:', rows[0].file_url?.substring(0, 200));
+                return NextResponse.json({ error: 'ข้อมูลสำรองเสียหาย (อาจเกิดจากข้อมูลถูกตัดเนื่องจาก column ขนาดเล็กเกินไป) กรุณาลบข้อมูลเก่าและสำรองใหม่' }, { status: 500 });
             }
         }
 
