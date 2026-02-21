@@ -119,8 +119,9 @@ export default function AdminBackupPage() {
                 html: `<div class="text-left space-y-2">
           <p class="text-gray-300">ไฟล์: <span class="text-indigo-400 font-mono text-sm">${data.fileName}</span></p>
           <p class="text-gray-300">ขนาด: <span class="text-emerald-400">${data.fileSize}</span></p>
+          ${!data.logSaved ? '<p class="text-amber-400 text-xs mt-2">⚠️ ไม่สามารถบันทึกประวัติได้ กรุณารัน SQL: ALTER TABLE backup_logs ALTER COLUMN file_url TYPE TEXT;</p>' : '<p class="text-emerald-400 text-xs mt-2">✓ บันทึกประวัติเรียบร้อย</p>'}
         </div>`,
-                icon: 'success',
+                icon: data.logSaved ? 'success' : 'warning',
                 confirmButtonText: 'ตกลง',
                 confirmButtonColor: '#6366f1',
                 background: '#23272b',

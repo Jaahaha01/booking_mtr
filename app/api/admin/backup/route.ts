@@ -174,13 +174,29 @@ export async function POST(request: NextRequest) {
         const fileName = `backup_${type}_${timestamp}.json`;
 
         // บันทึก log + เก็บเนื้อหา backup ลงตาราง backup_logs เพื่อดาวน์โหลดภายหลัง
+        let logSaved = false;
         try {
             await db`
                 INSERT INTO backup_logs (file_name, file_size, file_url, status, created_by)
                 VALUES (${fileName}, ${fileSize}, ${jsonStr}, ${'success'}, ${parseInt(adminId)})
             `;
-        } catch (logError) {
-            console.error('Error saving backup log:', logError);
+            logSaved = true;
+        } catch (logError: any) {
+            console.error('Error saving backup log:', logError?.message || logError);
+            // ถ้า error เกิดจาก column type เป็น VARCHAR ให้ลอง ALTER เป็น TEXT แล้ว retry
+            if (logError?.message?.includes('value too long') || logError?.message?.includes('varying')) {
+                try {
+                    await db`ALTER TABLE backup_logs ALTER COLUMN file_url TYPE TEXT`;
+                    await db`
+                        INSERT INTO backup_logs (file_name, file_size, file_url, status, created_by)
+                        VALUES (${fileName}, ${fileSize}, ${jsonStr}, ${'success'}, ${parseInt(adminId)})
+                    `;
+                    logSaved = true;
+                    console.log('Auto-fixed: backup_logs.file_url changed to TEXT');
+                } catch (retryError) {
+                    console.error('Retry after ALTER also failed:', retryError);
+                }
+            }
         }
 
         return NextResponse.json({
@@ -188,6 +204,7 @@ export async function POST(request: NextRequest) {
             backup: backupData,
             fileName,
             fileSize,
+            logSaved,
         });
     } catch (error) {
         console.error('Error creating backup:', error);
