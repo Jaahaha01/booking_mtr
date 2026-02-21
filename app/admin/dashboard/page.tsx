@@ -198,15 +198,6 @@ export default function AdminDashboardPage() {
           )}
         </div>
 
-        {/* Staff Info Banner */}
-        {isStaff && (
-          <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3">
-            <svg className="w-5 h-5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-amber-400 text-sm">คุณเข้าสู่ระบบในฐานะเจ้าหน้าที่ — กราฟและสถิติเชิงลึกจะแสดงเฉพาะผู้ดูแลระบบ (Admin) เท่านั้น</p>
-          </div>
-        )}
 
         {/* ============ TOP SECTION — Period Stats ============ */}
 
@@ -435,13 +426,15 @@ export default function AdminDashboardPage() {
                     <p className="text-indigo-200 text-xs">{data?.counts?.total_users || 0} คนในระบบ</p>
                   </div>
                 </Link>
-                <Link href="/admin/rooms" className="block w-full bg-white/10 hover:bg-white/20 p-3.5 rounded-xl transition-all duration-200 flex items-center group backdrop-blur-sm border border-white/5">
-                  <span className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center mr-3 group-hover:bg-white/25 transition-colors">🏢</span>
-                  <div>
-                    <span className="text-white font-medium text-sm">จัดการห้องประชุม</span>
-                    <p className="text-indigo-200 text-xs">ดูและจัดการห้อง</p>
-                  </div>
-                </Link>
+                {!isStaff && (
+                  <Link href="/admin/rooms" className="block w-full bg-white/10 hover:bg-white/20 p-3.5 rounded-xl transition-all duration-200 flex items-center group backdrop-blur-sm border border-white/5">
+                    <span className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center mr-3 group-hover:bg-white/25 transition-colors">🏢</span>
+                    <div>
+                      <span className="text-white font-medium text-sm">จัดการห้องประชุม</span>
+                      <p className="text-indigo-200 text-xs">ดูและจัดการห้อง</p>
+                    </div>
+                  </Link>
+                )}
               </div>
             </div>
             <div className="relative z-10 mt-6 pt-4 border-t border-white/10">
