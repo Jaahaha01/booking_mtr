@@ -190,7 +190,7 @@ export default function Chatbot() {
     } else if (option.includes('ดูตาราง') || option.includes('กลับไปหน้าแรก')) {
       window.location.href = '/';
     } else if (option.includes('สถานะการจอง')) {
-      window.location.href = '/booking_status';
+      window.location.href = '/bookings';
     } else if (option.includes('โปรไฟล์')) {
       window.location.href = '/profile';
     } else if (option.includes('สถิติการจอง') || option.includes('ดูสถิติ')) {
