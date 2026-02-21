@@ -3,95 +3,307 @@ import { db } from "@/lib/db";
 
 export const dynamic = 'force-dynamic';
 
+// Helper: ตรวจว่า message มีคำใดคำหนึ่งใน keywords
+function matchAny(msg: string, keywords: string[]): boolean {
+	return keywords.some(k => msg.includes(k));
+}
+
 export async function POST(req: NextRequest) {
 	try {
 		const { message } = await req.json();
-		const lcMessage = message.toLowerCase();
+		const lc = message.toLowerCase().trim();
 
-		// 1. Fetch real-time room availability logic
-		if (lcMessage.includes('ว่าง') || lcMessage.includes('available')) {
-			// Get all active rooms - Handle both schema possibilities safely or fetch all and filter in JS
-			// To be safe across schemas safely, let's fetch all rooms and filter in JS
+		// ═══════════════════════════════════════════════
+		// 1. ทักทาย / เริ่มต้นบทสนทนา
+		// ═══════════════════════════════════════════════
+		if (matchAny(lc, ['สวัสดี', 'หวัดดี', 'ดีครับ', 'ดีค่ะ', 'hello', 'hi', 'hey', 'ฮัลโหล'])) {
+			return NextResponse.json({
+				reply: 'สวัสดีครับ! 👋 ยินดีต้อนรับสู่ระบบจองห้องประชุม\n\nผมช่วยอะไรได้บ้างครับ?\n• ถามห้องว่าง\n• แนะนำห้องตามจำนวนคน\n• วิธีจองห้อง\n• เช็คสถานะการจอง'
+			});
+		}
+
+		if (matchAny(lc, ['ทำอะไรได้', 'ช่วยอะไร', 'มีอะไรช่วย', 'ใช้งานยังไง', 'คุณทำอะไร'])) {
+			return NextResponse.json({
+				reply: 'ผมช่วยได้หลายอย่างครับ 😊\n\n• 🏢 เช็คห้องว่าง/ไม่ว่าง\n• 👥 แนะนำห้องตามจำนวนคน\n• 📋 แนะนำวิธีจองห้อง\n• 📊 เช็คสถานะ/ประวัติการจอง\n• ❌ วิธียกเลิกการจอง\n• ⏰ เวลาทำการ/กฎการใช้ห้อง\n• 🖥️ อุปกรณ์ในห้อง\n• ⭐ ส่ง Feedback/รีวิว\n\nลองถามได้เลยครับ!'
+			});
+		}
+
+		// ═══════════════════════════════════════════════
+		// 2. ถามห้องว่าง / ห้องที่ใช้ได้ (Real-time)
+		// ═══════════════════════════════════════════════
+		if (matchAny(lc, ['ว่าง', 'available', 'ห้องไหนใช้ได้', 'เช็คห้อง', 'ดูห้อง', 'มีห้อง', 'อยากใช้ห้อง', 'ห้องว่าง', 'ใช้ห้อง'])) {
 			const rooms = await db`SELECT * FROM rooms`;
 			const activeRooms = rooms.filter((r: any) => r.status === 'active' || r.is_active === true || r.is_active === 1);
 
-			// Check busy rooms NOW
 			const busy = await db`
-        SELECT DISTINCT room_id FROM bookings 
-        WHERE status = 'confirmed' 
-        AND NOW() BETWEEN start AND "end"
-      `;
+				SELECT DISTINCT room_id FROM bookings 
+				WHERE status = 'confirmed' 
+				AND NOW() BETWEEN start AND "end"
+			`;
 			const busyIds = new Set(busy.map((b: any) => b.room_id));
 
 			const availableRooms = activeRooms.filter((r: any) => !busyIds.has(r.room_id));
+			const busyRooms = activeRooms.filter((r: any) => busyIds.has(r.room_id));
 
 			if (availableRooms.length > 0) {
-				return NextResponse.json({
-					reply: `ขณะนี้มีห้องว่าง ${availableRooms.length} ห้องครับ:\n` +
-						availableRooms.map((r: any) => `• ${r.name} (รองรับ ${r.capacity} คน)`).join('\n')
-				});
+				let reply = `🟢 ขณะนี้มีห้องว่าง <b>${availableRooms.length}</b> ห้องครับ:\n\n`;
+				reply += availableRooms.map((r: any) => `• <b>${r.name}</b> (รองรับ ${r.capacity} คน)`).join('\n');
+				if (busyRooms.length > 0) {
+					reply += `\n\n🔴 ห้องที่กำลังใช้งาน: ${busyRooms.map((r: any) => r.name).join(', ')}`;
+				}
+				reply += '\n\n💡 กดที่เมนู "จองห้องประชุม" เพื่อจองได้เลยครับ';
+				return NextResponse.json({ reply });
 			} else {
 				return NextResponse.json({
-					reply: `ขออภัยครับ ขณะนี้ไม่มีห้องว่างเลยครับ`
+					reply: '🔴 ขออภัยครับ ขณะนี้ห้องประชุมไม่ว่างทุกห้องเลยครับ\n\n💡 ลองเช็คอีกครั้งภายหลัง หรือดูตารางห้องที่เมนู "จองห้องประชุม" เพื่อเลือกช่วงเวลาอื่นครับ'
 				});
 			}
 		}
 
-		// 2. Room recommendation based on capacity
-		const capacityMatch = lcMessage.match(/(\d+)\s*คน/);
-		if (capacityMatch && (lcMessage.includes('เหมาะ') || lcMessage.includes('คน'))) {
+		// ═══════════════════════════════════════════════
+		// 3. แนะนำห้องตามจำนวนคน
+		// ═══════════════════════════════════════════════
+		const capacityMatch = lc.match(/(\d+)\s*คน/);
+		if (capacityMatch && matchAny(lc, ['คน', 'เหมาะ', 'รองรับ', 'จุ', 'ประชุม', 'แนะนำ', 'ต้องการ', 'อยากได้', 'สำหรับ', 'ห้อง'])) {
 			const requiredCapacity = parseInt(capacityMatch[1]);
-
-			// Fetch all rooms and filter in JS to handle "50 คน" (string) vs 50 (int)
 			const rooms = await db`SELECT * FROM rooms`;
 
 			const matchingRooms = rooms.filter((r: any) => {
 				const isActive = r.status === 'active' || r.is_active === true || r.is_active === 1;
 				if (!isActive) return false;
-
-				// Parse capacity
 				let cap = 0;
 				if (typeof r.capacity === 'number') {
 					cap = r.capacity;
 				} else if (typeof r.capacity === 'string') {
-					// Extract number from string like "50 คน"
 					const match = r.capacity.match(/(\d+)/);
 					cap = match ? parseInt(match[1]) : 0;
 				}
 				return cap >= requiredCapacity;
 			}).sort((a: any, b: any) => {
-				// Sort by capacity ASC
 				const getCap = (r: any) => typeof r.capacity === 'number' ? r.capacity : parseInt(r.capacity?.toString().match(/(\d+)/)?.[1] || '0');
 				return getCap(a) - getCap(b);
-			}).slice(0, 3);
+			});
 
 			if (matchingRooms.length > 0) {
-				const bestRoom = matchingRooms[0];
-				return NextResponse.json({
-					reply: `สำหรับ ${requiredCapacity} ท่าน ขอแนะนำ "${bestRoom.name}" ครับ (รองรับได้สูงสุด ${bestRoom.capacity} คน)\n\n` +
-						`อุปกรณ์: ${bestRoom.equipment || bestRoom.description || 'โปรเจคเตอร์, ไวท์บอร์ด'}`
-				});
+				const best = matchingRooms[0];
+				let reply = `👥 สำหรับ <b>${requiredCapacity} ท่าน</b> ขอแนะนำ:\n\n`;
+				reply += `⭐ <b>${best.name}</b> (รองรับ ${best.capacity} คน)`;
+				if (best.equipment || best.description) {
+					reply += `\n🖥️ อุปกรณ์: ${best.equipment || best.description}`;
+				}
+				if (matchingRooms.length > 1) {
+					reply += `\n\n📌 ห้องอื่นที่รองรับได้:\n`;
+					reply += matchingRooms.slice(1, 4).map((r: any) => `• ${r.name} (${r.capacity} คน)`).join('\n');
+				}
+				reply += '\n\n💡 กดเมนู "จองห้องประชุม" เพื่อจองได้เลยครับ';
+				return NextResponse.json({ reply });
 			} else {
 				return NextResponse.json({
-					reply: `ขออภัยครับ ทางเราไม่มีห้องที่รองรับจำนวน ${requiredCapacity} ท่านได้`
+					reply: `😔 ขออภัยครับ ไม่มีห้องที่รองรับ ${requiredCapacity} ท่านได้\n\nลองลดจำนวนคน หรือติดต่อเจ้าหน้าที่เพื่อขอคำแนะนำเพิ่มเติมครับ`
 				});
 			}
 		}
 
-		// 3. General FAQ fallback
-		if (lcMessage.includes('จอง')) {
-			return NextResponse.json({ reply: 'คุณสามารถจองห้องได้ที่เมนู "จองห้องประชุม" ด้านบน หรือกดปุ่ม "จองห้องประชุม" ในหน้าแรกได้เลยครับ' });
-		}
-		if (lcMessage.includes('ประวัติ') || lcMessage.includes('สถานะ')) {
-			return NextResponse.json({ reply: 'ตรวจสอบสถานะและประวัติการจองได้ที่เมนู "สถานะการจอง" ครับ' });
-		}
-		if (lcMessage.includes('สวัสดี') || lcMessage.includes('hi')) {
-			return NextResponse.json({ reply: 'สวัสดีครับ! มีอะไรให้ผมช่วยไหมครับ? สอบถามเรื่องห้องว่างหรือแนะนำห้องประชุมได้นะ' });
+		// ═══════════════════════════════════════════════
+		// 4. วิธีจองห้อง
+		// ═══════════════════════════════════════════════
+		if (matchAny(lc, ['จองยังไง', 'วิธีจอง', 'จองห้อง', 'อยากจอง', 'ขั้นตอนการจอง', 'จองตรงไหน', 'จองได้ที่', 'กดจอง', 'book room', 'จองได้ไหม'])) {
+			return NextResponse.json({
+				reply: '📋 <b>วิธีจองห้องประชุม</b>\n\n' +
+					'1️⃣ กดเมนู <b>"จองห้องประชุม"</b> ด้านบน\n' +
+					'2️⃣ เลือก <b>ห้องประชุม</b> ที่ต้องการ\n' +
+					'3️⃣ เลือก <b>วันที่และเวลา</b> ที่ต้องการ\n' +
+					'4️⃣ กรอก <b>หัวข้อและรายละเอียด</b>\n' +
+					'5️⃣ กด <b>"ยืนยันการจอง"</b>\n\n' +
+					'⏳ หลังจองแล้ว รอเจ้าหน้าที่อนุมัติ จะแจ้งผลทางระบบครับ'
+			});
 		}
 
-		// Default response
+		// ═══════════════════════════════════════════════
+		// 5. สถานะการจอง / ประวัติ
+		// ═══════════════════════════════════════════════
+		if (matchAny(lc, ['สถานะ', 'ประวัติ', 'ดูการจอง', 'เช็คการจอง', 'ตรวจสอบ', 'booking status', 'จองไว้', 'การจองของ', 'ผลการจอง'])) {
+			return NextResponse.json({
+				reply: '📊 <b>เช็คสถานะ/ประวัติการจอง</b>\n\n' +
+					'• กดเมนู <b>"สถานะการจอง"</b> ด้านบน\n' +
+					'• ดูรายการจองทั้งหมดของคุณ\n' +
+					'• ดูว่าคำขอจองได้รับ <b>อนุมัติ/รอดำเนินการ/ปฏิเสธ</b>\n\n' +
+					'💡 คุณสามารถ <b>ยกเลิก</b> การจองที่ยังไม่ถึงเวลาได้เช่นกันครับ'
+			});
+		}
+
+		// ═══════════════════════════════════════════════
+		// 6. ยกเลิก / เปลี่ยนแปลงการจอง
+		// ═══════════════════════════════════════════════
+		if (matchAny(lc, ['ยกเลิก', 'cancel', 'เปลี่ยนการจอง', 'แก้ไขการจอง', 'ไม่ต้องการจอง', 'ลบการจอง'])) {
+			return NextResponse.json({
+				reply: '❌ <b>วิธียกเลิกการจอง</b>\n\n' +
+					'1️⃣ ไปที่เมนู <b>"สถานะการจอง"</b>\n' +
+					'2️⃣ เลือกรายการจองที่ต้องการยกเลิก\n' +
+					'3️⃣ กดปุ่ม <b>"ยกเลิก"</b>\n\n' +
+					'⚠️ <b>หมายเหตุ:</b> สามารถยกเลิกได้เฉพาะการจองที่ยังไม่ถึงเวลาเท่านั้นครับ'
+			});
+		}
+
+		// ═══════════════════════════════════════════════
+		// 7. เวลาทำการ / กฎระเบียบ
+		// ═══════════════════════════════════════════════
+		if (matchAny(lc, ['เปิดกี่โมง', 'เวลาทำการ', 'กี่โมง', 'ใช้ได้ตอนไหน', 'นานสุด', 'ล่วงหน้า', 'กฎ', 'ระเบียบ', 'ข้อกำหนด', 'เงื่อนไข'])) {
+			return NextResponse.json({
+				reply: '⏰ <b>เวลาทำการและกฎการใช้ห้อง</b>\n\n' +
+					'🕗 เปิดให้จอง: <b>08:00 - 17:00 น.</b> (วันจันทร์-ศุกร์)\n' +
+					'📅 จองล่วงหน้า: สามารถจองล่วงหน้าได้\n' +
+					'⏱️ ระยะเวลาการใช้ห้อง: ตามที่ระบุในการจอง\n\n' +
+					'📌 <b>กฎการใช้งาน:</b>\n' +
+					'• ใช้ห้องตามเวลาที่จองเท่านั้น\n' +
+					'• รักษาความสะอาดห้องประชุม\n' +
+					'• ปิดอุปกรณ์ไฟฟ้าหลังใช้งาน\n' +
+					'• หากไม่ใช้งาน กรุณายกเลิกล่วงหน้า'
+			});
+		}
+
+		// ═══════════════════════════════════════════════
+		// 8. อุปกรณ์ในห้อง
+		// ═══════════════════════════════════════════════
+		if (matchAny(lc, ['อุปกรณ์', 'โปรเจคเตอร์', 'projector', 'จอ tv', 'ไวท์บอร์ด', 'whiteboard', 'wifi', 'ไมค์', 'ไมโครโฟน', 'mic'])) {
+			const rooms = await db`SELECT * FROM rooms`;
+			const activeRooms = rooms.filter((r: any) => r.status === 'active' || r.is_active === true || r.is_active === 1);
+
+			let reply = '🖥️ <b>อุปกรณ์ในห้องประชุม</b>\n\n';
+			activeRooms.forEach((r: any) => {
+				reply += `📌 <b>${r.name}</b>\n`;
+				reply += `   จำนวน: ${r.capacity} คน\n`;
+				if (r.equipment || r.description) {
+					reply += `   อุปกรณ์: ${r.equipment || r.description}\n`;
+				}
+				reply += '\n';
+			});
+			reply += '💡 ทุกห้องมี Wi-Fi และเครื่องปรับอากาศครับ';
+			return NextResponse.json({ reply });
+		}
+
+		// ═══════════════════════════════════════════════
+		// 9. ถามข้อมูลห้อง / รายชื่อห้อง
+		// ═══════════════════════════════════════════════
+		if (matchAny(lc, ['มีห้องกี่ห้อง', 'รายชื่อห้อง', 'ห้องทั้งหมด', 'รายละเอียดห้อง', 'ห้องไหนใหญ่', 'ข้อมูลห้อง', 'ดูห้องทั้งหมด', 'ห้องประชุมมีอะไร'])) {
+			const rooms = await db`SELECT * FROM rooms`;
+			const activeRooms = rooms.filter((r: any) => r.status === 'active' || r.is_active === true || r.is_active === 1);
+
+			let reply = `🏢 <b>ห้องประชุมทั้งหมด (${activeRooms.length} ห้อง)</b>\n\n`;
+			activeRooms.forEach((r: any, i: number) => {
+				reply += `${i + 1}. <b>${r.name}</b>\n`;
+				reply += `   • รองรับ: ${r.capacity} คน\n`;
+				if (r.room_number) reply += `   • ห้อง: ${r.room_number}\n`;
+				reply += '\n';
+			});
+			reply += '💡 กดเมนู "จองห้องประชุม" เพื่อดูรายละเอียดเพิ่มเติมครับ';
+			return NextResponse.json({ reply });
+		}
+
+		// ═══════════════════════════════════════════════
+		// 10. บัญชีผู้ใช้ / โปรไฟล์
+		// ═══════════════════════════════════════════════
+		if (matchAny(lc, ['สมัครสมาชิก', 'ลงทะเบียน', 'register', 'สมัคร'])) {
+			return NextResponse.json({
+				reply: '📝 <b>วิธีสมัครสมาชิก</b>\n\n' +
+					'1️⃣ กดปุ่ม <b>"สมัครสมาชิก"</b> ที่หน้า Login\n' +
+					'2️⃣ กรอกข้อมูลส่วนตัว (ชื่อ, อีเมล, รหัสผ่าน)\n' +
+					'3️⃣ กด <b>"สมัครสมาชิก"</b>\n\n' +
+					'✅ หลังสมัครเสร็จ สามารถเข้าสู่ระบบได้ทันทีครับ'
+			});
+		}
+
+		if (matchAny(lc, ['ลืมรหัส', 'รหัสผ่าน', 'เปลี่ยนรหัส', 'password', 'reset password'])) {
+			return NextResponse.json({
+				reply: '🔑 <b>เกี่ยวกับรหัสผ่าน</b>\n\n' +
+					'• <b>ลืมรหัสผ่าน:</b> ติดต่อเจ้าหน้าที่เพื่อรีเซ็ตรหัสผ่านครับ\n' +
+					'• <b>เปลี่ยนรหัสผ่าน:</b> ไปที่เมนู "โปรไฟล์" แล้วกด "เปลี่ยนรหัสผ่าน"\n\n' +
+					'📞 ติดต่อเจ้าหน้าที่ได้ในเวลาทำการครับ'
+			});
+		}
+
+		if (matchAny(lc, ['โปรไฟล์', 'profile', 'แก้ไขข้อมูล', 'ข้อมูลส่วนตัว'])) {
+			return NextResponse.json({
+				reply: '👤 <b>แก้ไขข้อมูลส่วนตัว</b>\n\n' +
+					'• กดเมนู <b>"โปรไฟล์"</b> มุมขวาบน\n' +
+					'• สามารถแก้ไข ชื่อ, อีเมล, รูปโปรไฟล์ ได้\n' +
+					'• เปลี่ยนรหัสผ่านได้ที่หน้าเดียวกัน'
+			});
+		}
+
+		// ═══════════════════════════════════════════════
+		// 11. Feedback / ส่งความคิดเห็น
+		// ═══════════════════════════════════════════════
+		if (matchAny(lc, ['ให้คะแนน', 'ความคิดเห็น', 'feedback', 'รีวิว', 'review', 'ส่งคอมเม้น', 'แสดงความคิดเห็น', 'ประเมิน'])) {
+			return NextResponse.json({
+				reply: '⭐ <b>ส่งความคิดเห็น / Feedback</b>\n\n' +
+					'• หลังใช้ห้องประชุมเสร็จ ระบบจะแจ้งให้ส่ง Feedback\n' +
+					'• สามารถให้คะแนนดาว ⭐ และเขียนรีวิวได้\n' +
+					'• ความคิดเห็นของคุณช่วยปรับปรุงบริการให้ดีขึ้นครับ 🙏'
+			});
+		}
+
+		// ═══════════════════════════════════════════════
+		// 12. แจ้งปัญหา / ร้องเรียน / ติดต่อ
+		// ═══════════════════════════════════════════════
+		if (matchAny(lc, ['แจ้งปัญหา', 'ร้องเรียน', 'ปัญหา', 'ขัดข้อง', 'ห้องเสีย', 'ติดต่อ', 'เจ้าหน้าที่', 'แอดมิน', 'admin'])) {
+			return NextResponse.json({
+				reply: '📞 <b>ติดต่อเจ้าหน้าที่</b>\n\n' +
+					'หากพบปัญหาหรือต้องการความช่วยเหลือ:\n\n' +
+					'🏫 <b>ติดต่อกองพัฒนานักศึกษา</b>\n' +
+					'📍 อาคารกิจกรรมนักศึกษา\n' +
+					'⏰ เวลาทำการ: จันทร์-ศุกร์ 08:30-16:30 น.\n\n' +
+					'💡 หรือแจ้งปัญหาผ่านระบบ Feedback ได้เลยครับ'
+			});
+		}
+
+		// ═══════════════════════════════════════════════
+		// 13. ขอบคุณ / ลาก่อน
+		// ═══════════════════════════════════════════════
+		if (matchAny(lc, ['ขอบคุณ', 'ขอบใจ', 'thanks', 'thank you', 'thx'])) {
+			return NextResponse.json({
+				reply: 'ยินดีครับ! 😊 หากมีคำถามเพิ่มเติม สอบถามได้ตลอดนะครับ'
+			});
+		}
+
+		if (matchAny(lc, ['บาย', 'bye', 'ลาก่อน', 'ลาล่ะ', 'ไปก่อน', 'ไว้เจอกัน'])) {
+			return NextResponse.json({
+				reply: 'ลาก่อนครับ! 👋 แล้วเจอกันนะ หากต้องการความช่วยเหลือ กลับมาถามได้ทุกเมื่อครับ 😊'
+			});
+		}
+
+		// ═══════════════════════════════════════════════
+		// 14. คำถามเฉพาะทางเพิ่มเติม
+		// ═══════════════════════════════════════════════
+		if (matchAny(lc, ['ตารางเรียน', 'ชั่วโมงเรียน', 'คาบเรียน', 'วิชา'])) {
+			return NextResponse.json({
+				reply: '📚 <b>เกี่ยวกับตารางเรียน</b>\n\n' +
+					'ห้องประชุมบางห้องอาจมีตารางเรียนที่ใช้เป็นห้องเรียนในบางช่วงเวลา\n\n' +
+					'• ระบบจะ <b>ไม่อนุญาตให้จอง</b> ในช่วงเวลาที่มีการเรียนการสอน\n' +
+					'• สามารถดูตารางเรียนได้ที่หน้า <b>"จองห้องประชุม"</b> ครับ'
+			});
+		}
+
+		if (matchAny(lc, ['ห้องประชุม', 'room'])) {
+			return NextResponse.json({
+				reply: '🏢 คุณสามารถดูห้องประชุมทั้งหมดได้ที่เมนู <b>"ห้องประชุม"</b> ด้านบน\n\n' +
+					'หรือลองถาม:\n• "ห้องว่างไหม" - เช็คห้องว่างตอนนี้\n• "ห้องสำหรับ 20 คน" - แนะนำห้องตามจำนวน\n• "มีอุปกรณ์อะไร" - ดูอุปกรณ์ในห้อง'
+			});
+		}
+
+		// ═══════════════════════════════════════════════
+		// Default - ไม่เข้าใจคำถาม
+		// ═══════════════════════════════════════════════
 		return NextResponse.json({
-			reply: 'ขออภัยครับ ผมยังไม่เข้าใจคำถาม ลองถามว่า "ห้องไหนว่างบ้าง" หรือ "ห้องสำหรับ 20 คน" ดูไหมครับ?'
+			reply: '🤔 ขออภัยครับ ผมยังไม่เข้าใจคำถามนี้\n\n' +
+				'ลองถามแบบนี้ดูครับ:\n' +
+				'• "ห้องไหนว่างบ้าง"\n' +
+				'• "ห้องสำหรับ 20 คน"\n' +
+				'• "จองห้องยังไง"\n' +
+				'• "เช็คสถานะการจอง"\n' +
+				'• "เวลาทำการ"\n' +
+				'• "อุปกรณ์ในห้อง"\n' +
+				'• "ติดต่อเจ้าหน้าที่"'
 		});
 
 	} catch (error) {
@@ -100,7 +312,6 @@ export async function POST(req: NextRequest) {
 	}
 }
 
-// Keep GET for compatibility if needed, but return empty or instructions
 export async function GET() {
 	return NextResponse.json({ message: 'Please use POST method for chat.' });
 }

@@ -40,9 +40,11 @@ interface RoomStats {
 
 const quickQuestions = [
   "ห้องประชุมไหนว่างบ้าง?",
-  "สามารถยกเลิกคำขอจองได้ไหม?",
-  "ดูประวัติการจองได้ที่ไหน?",
-  "จองห้องประชุมได้อย่างไร?"
+  "จองห้องยังไง?",
+  "เช็คสถานะการจอง",
+  "อุปกรณ์ในห้องประชุม",
+  "ยกเลิกการจองยังไง?",
+  "ติดต่อเจ้าหน้าที่"
 ];
 
 export default function Chatbot() {
@@ -374,8 +376,8 @@ export default function Chatbot() {
                 onClick={handleSendMessage}
                 disabled={!inputMessage.trim()}
                 className={`p-2 rounded-full flex-shrink-0 transition-colors duration-200 ${inputMessage.trim()
-                    ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-md'
-                    : 'bg-gray-300 text-gray-400 cursor-not-allowed'
+                  ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-md'
+                  : 'bg-gray-300 text-gray-400 cursor-not-allowed'
                   }`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

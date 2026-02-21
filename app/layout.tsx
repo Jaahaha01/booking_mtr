@@ -1,7 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import ConditionalNavbar from './components/ConditionalNavbar';
-import Chatbot from './components/Chatbot';
+import ConditionalChatbot from './components/ConditionalChatbot';
 
 export const metadata: Metadata = {
   title: 'ระบบจองห้องประชุม',
@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             &copy; {new Date().getFullYear()} RMUTSB | คณะวิทยาศาสตร์เทคโนโลยี | ระบบจองห้องประชุม
           </div>
         </footer>
-        <Chatbot />
+        <ConditionalChatbot />
       </body>
     </html>
   );
