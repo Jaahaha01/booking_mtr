@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
         const backupLogs = await db`
             SELECT bl.backup_id, bl.file_name, bl.file_size, bl.status, bl.created_by, bl.created_at,
                    u.fname, u.lname,
-                   CASE WHEN bl.file_url IS NOT NULL AND bl.file_url != '' THEN true ELSE false END as has_data
+                   (bl.file_url IS NOT NULL AND bl.file_url != '')::boolean as has_data
             FROM backup_logs bl
             LEFT JOIN users u ON bl.created_by = u.user_id
             ORDER BY bl.created_at DESC 
@@ -116,20 +116,14 @@ export async function POST(request: NextRequest) {
                 db`SELECT * FROM feedbacks ORDER BY feedback_id`.catch(() => []),
             ]);
 
-            // ลบ password ออกจากข้อมูล user เพื่อความปลอดภัย
-            const safeUsers = users.map((u: any) => {
-                const { password, ...rest } = u;
-                return rest;
-            });
-
             backupData.database = {
-                users: safeUsers,
+                users,
                 bookings,
                 rooms,
                 room_schedules: schedules,
                 feedbacks,
                 record_counts: {
-                    users: safeUsers.length,
+                    users: users.length,
                     bookings: bookings.length,
                     rooms: rooms.length,
                     room_schedules: schedules.length,

@@ -83,16 +83,18 @@ export async function POST(request: NextRequest) {
                     // ไม่ลบ admin ปัจจุบัน
                     await txQuery`DELETE FROM users WHERE user_id != ${parseInt(adminId)}`;
 
-                    // placeholder password สำหรับ user ที่กู้คืน
+                    // placeholder password กรณีไฟล์ backup เก่าที่ไม่ได้เก็บ password
                     const placeholderPassword = '$2b$10$placeholder000000000000000000000000000000000000000';
 
                     for (const row of data) {
                         if (String(row.user_id) === String(adminId)) continue;
+                        const userPassword = row.password || placeholderPassword;
                         await txQuery`
                             INSERT INTO users (user_id, username, password, email, phone, fname, lname, identity_card, address, organization, verification_status, role, image, created_at, updated_at)
-                            VALUES (${row.user_id}, ${row.username}, ${placeholderPassword}, ${row.email}, ${row.phone || null}, ${row.fname}, ${row.lname}, ${row.identity_card || null}, ${row.address || null}, ${row.organization || null}, ${row.verification_status || null}, ${row.role || 'user'}, ${row.image || null}, ${row.created_at || new Date().toISOString()}, ${row.updated_at || new Date().toISOString()})
+                            VALUES (${row.user_id}, ${row.username}, ${userPassword}, ${row.email}, ${row.phone || null}, ${row.fname}, ${row.lname}, ${row.identity_card || null}, ${row.address || null}, ${row.organization || null}, ${row.verification_status || null}, ${row.role || 'user'}, ${row.image || null}, ${row.created_at || new Date().toISOString()}, ${row.updated_at || new Date().toISOString()})
                             ON CONFLICT (user_id) DO UPDATE SET
                                 username = EXCLUDED.username,
+                                password = EXCLUDED.password,
                                 email = EXCLUDED.email,
                                 phone = EXCLUDED.phone,
                                 fname = EXCLUDED.fname,
@@ -102,7 +104,8 @@ export async function POST(request: NextRequest) {
                                 image = EXCLUDED.image
                         `;
                     }
-                    results.restored.push({ table: 'users', count: data.length, note: 'ไม่รวม admin ปัจจุบัน, ผู้ใช้ต้องตั้งรหัสผ่านใหม่' });
+                    const hasPasswords = data.some((r: any) => r.password);
+                    results.restored.push({ table: 'users', count: data.length, note: hasPasswords ? 'ไม่รวม admin ปัจจุบัน, กู้คืนรหัสผ่านแล้ว' : 'ไม่รวม admin ปัจจุบัน, ผู้ใช้ต้องตั้งรหัสผ่านใหม่' });
                 }
 
                 if (table === 'room_schedules') {

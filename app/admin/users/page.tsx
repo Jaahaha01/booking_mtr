@@ -115,6 +115,55 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleResetPassword = async (userId: number) => {
+    const targetUser = users.find(u => u.user_id === userId);
+    if (!targetUser) return;
+    if (targetUser.role === 'staff' || targetUser.role === 'admin') {
+      Swal.fire({ title: 'ไม่สามารถรีเซ็ตได้', text: 'ไม่สามารถรีเซ็ตรหัสผ่านเจ้าหน้าที่หรือผู้ดูแลระบบ', icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', background: '#23272b', color: '#e5e7eb' });
+      return;
+    }
+
+    const { value: newPassword } = await Swal.fire({
+      title: `รีเซ็ตรหัสผ่าน`,
+      html: `<p class="text-gray-400 text-sm mb-3">ผู้ใช้: <span class="text-white font-medium">${targetUser.fname} ${targetUser.lname}</span></p>`,
+      input: 'password',
+      inputLabel: 'รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)',
+      inputPlaceholder: 'รหัสผ่านใหม่',
+      inputAttributes: { minlength: '6', autocomplete: 'new-password' },
+      showCancelButton: true,
+      confirmButtonText: 'รีเซ็ตรหัสผ่าน',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#f59e0b',
+      cancelButtonColor: '#6b7280',
+      reverseButtons: true,
+      background: '#23272b',
+      color: '#e5e7eb',
+      inputValidator: (value) => {
+        if (!value) return 'กรุณากรอกรหัสผ่านใหม่';
+        if (value.length < 6) return 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
+        return null;
+      },
+    });
+
+    if (!newPassword) return;
+
+    setUpdating(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'เกิดข้อผิดพลาด');
+
+      Swal.fire({ title: 'รีเซ็ตรหัสผ่านสำเร็จ!', text: data.message, icon: 'success', confirmButtonText: 'ตกลง', confirmButtonColor: '#6366f1', background: '#23272b', color: '#e5e7eb' });
+    } catch (err: any) {
+      Swal.fire({ title: 'เกิดข้อผิดพลาด', text: err.message, icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', background: '#23272b', color: '#e5e7eb' });
+    } finally {
+      setUpdating(null);
+    }
+  };
   const filteredUsers = users.filter(user => {
     if (user.role === 'staff' || user.role === 'admin') return false;
     const matchesSearch =
@@ -262,12 +311,12 @@ export default function AdminUsersPage() {
                           <option value="rejected">ถูกปฏิเสธ</option>
                         </select>
                         <span className={`px-2.5 py-1 rounded-lg text-xs font-medium border ${userItem.verification_status === 'approved'
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                            : userItem.verification_status === 'pending'
-                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                              : userItem.verification_status === 'rejected'
-                                ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                                : 'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          : userItem.verification_status === 'pending'
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                            : userItem.verification_status === 'rejected'
+                              ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                              : 'bg-gray-500/10 text-gray-400 border-gray-500/20'
                           }`}>
                           {userItem.verification_status === 'approved' ? '✓ ยืนยัน' : userItem.verification_status === 'pending' ? '⏳ รอ' : userItem.verification_status === 'rejected' ? '✗ ปฏิเสธ' : '— ยังไม่ยืนยัน'}
                         </span>
@@ -304,6 +353,12 @@ export default function AdminUsersPage() {
                               disabled={userItem.user_id === user?.user_id}
                             >
                               ลบ
+                            </button>
+                            <button
+                              onClick={() => handleResetPassword(userItem.user_id)}
+                              className="px-3 py-1.5 bg-amber-500/10 text-amber-400 rounded-lg text-xs font-medium hover:bg-amber-500/20 transition-colors border border-amber-500/20"
+                            >
+                              รีเซ็ตรหัส
                             </button>
                           </>
                         )}
