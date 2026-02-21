@@ -39,6 +39,12 @@ interface DashboardData {
         room_name: string;
         cancelled_by: number;
     }[];
+    frequentRooms: {
+        room_id: number;
+        name: string;
+        capacity: number;
+        booking_count: number;
+    }[];
 }
 
 export default function DashboardPage() {
@@ -100,7 +106,7 @@ export default function DashboardPage() {
         );
     }
 
-    const { stats, rooms, recentBookings } = data;
+    const { stats, rooms, recentBookings, frequentRooms } = data;
 
     return (
         <div className="min-h-screen bg-gray-50 pb-12">
@@ -289,8 +295,63 @@ export default function DashboardPage() {
 
                     </div>
 
-                    {/* Right: Room Status */}
-                    <div className="lg:col-span-1">
+                    {/* Right: Frequent Rooms + Room Status */}
+                    <div className="lg:col-span-1 space-y-6">
+
+                        {/* Frequently Booked Rooms */}
+                        {frequentRooms && frequentRooms.length > 0 && (
+                            <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+                                <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
+                                    <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                                        <span className="w-1 h-6 bg-indigo-600 rounded-full mr-3"></span>
+                                        ห้องที่จองบ่อย
+                                    </h3>
+                                    <p className="text-xs text-gray-500 mt-1 ml-4">ห้องที่คุณใช้บริการบ่อยที่สุด</p>
+                                </div>
+                                <div className="p-5 space-y-3">
+                                    {frequentRooms.map((room, index) => (
+                                        <div
+                                            key={room.room_id}
+                                            className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-indigo-50/30 hover:shadow-lg hover:border-indigo-200 transition-all duration-300"
+                                        >
+                                            <div className="p-4">
+                                                <div className="flex items-start justify-between mb-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-500' :
+                                                                index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400' :
+                                                                    'bg-gradient-to-br from-amber-600 to-amber-700'
+                                                            }`}>
+                                                            {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">{room.name}</h4>
+                                                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                                                                <span className="flex items-center gap-1">
+                                                                    <FaUsers className="text-gray-400" />
+                                                                    {room.capacity} คน
+                                                                </span>
+                                                                <span className="flex items-center gap-1">
+                                                                    <FaCalendarCheck className="text-indigo-400" />
+                                                                    จอง {room.booking_count} ครั้ง
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <Link
+                                                    href={`/booking?room=${room.room_id}`}
+                                                    className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-xl transition-colors duration-200 shadow-sm hover:shadow-md"
+                                                >
+                                                    <FaCalendarCheck className="w-3 h-3" />
+                                                    จองอีกครั้ง
+                                                    <FaArrowRight className="w-3 h-3" />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 sticky top-24">
                             <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
                                 <h3 className="text-lg font-bold text-gray-800 flex items-center">

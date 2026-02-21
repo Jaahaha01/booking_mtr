@@ -82,6 +82,22 @@ export async function GET() {
       LIMIT 5
     `;
 
+        // 4. User's Most Frequently Booked Rooms (Top 3)
+        const frequentRooms = await db`
+      SELECT 
+        r.room_id,
+        r.name,
+        r.capacity,
+        COUNT(*)::int as booking_count
+      FROM bookings b
+      JOIN rooms r ON b.room_id = r.room_id
+      WHERE b.user_id = ${userId}
+      AND b.status IN ('confirmed', 'pending')
+      GROUP BY r.room_id, r.name, r.capacity
+      ORDER BY booking_count DESC
+      LIMIT 3
+    `;
+
         return NextResponse.json({
             stats: { total, pending, approved, rejected, cancelled },
             rooms: roomStatus,
@@ -93,6 +109,12 @@ export async function GET() {
                 status: b.status,
                 room_name: b.room_name,
                 cancelled_by: b.cancelled_by
+            })),
+            frequentRooms: frequentRooms.map((r: any) => ({
+                room_id: r.room_id,
+                name: r.name,
+                capacity: r.capacity,
+                booking_count: r.booking_count
             }))
         });
 
