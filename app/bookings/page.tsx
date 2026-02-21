@@ -101,10 +101,6 @@ export default function BookingsPage() {
               <h1 className="text-2xl font-bold text-gray-900">สถานะการจอง</h1>
               <p className="text-sm text-gray-500 mt-1">ติดตามสถานะคำขอจองห้องประชุมของคุณ</p>
             </div>
-            <Link href="/booking" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 shadow-sm">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-              จองห้องประชุม
-            </Link>
           </div>
 
           {/* Filter Tabs */}
@@ -132,11 +128,7 @@ export default function BookingsPage() {
               <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-800 mb-2">ไม่มีการจอง</h3>
-            <p className="text-gray-500 mb-6 text-sm">ยังไม่มีการจองในหมวดหมู่นี้</p>
-            <Link href="/booking" className="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm font-medium gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-              จองห้องประชุม
-            </Link>
+            <p className="text-gray-500 text-sm">ยังไม่มีการจองในหมวดหมู่นี้</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -166,7 +158,7 @@ export default function BookingsPage() {
                     </div>
 
                     {/* Info Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <div className="bg-gray-50 rounded-xl p-3">
                         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">ห้องประชุม</p>
                         <p className="text-sm font-medium text-gray-800">{booking.room_name}</p>
@@ -180,10 +172,22 @@ export default function BookingsPage() {
                         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">ผู้เข้าร่วม</p>
                         <p className="text-sm font-medium text-gray-800">{booking.attendees || '-'} / {booking.room_capacity} คน</p>
                       </div>
-                      <div className="bg-gray-50 rounded-xl p-3">
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">อุปกรณ์เสริม</p>
-                        <p className="text-sm font-medium text-gray-800 truncate">{booking.notes || 'ไม่มี'}</p>
-                      </div>
+                    </div>
+                    {/* อุปกรณ์เสริม - แสดงแยกแถวเพื่อให้เห็นครบ */}
+                    <div className="bg-gray-50 rounded-xl p-3 mt-3">
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">อุปกรณ์เสริม</p>
+                      {booking.notes && booking.notes !== 'ไม่ต้องการอุปกรณ์เสริม' ? (
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {booking.notes.split(',').map((item, idx) => (
+                            <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium border border-blue-100">
+                              <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                              {item.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">ไม่ต้องการอุปกรณ์เสริม</p>
+                      )}
                     </div>
 
                     {/* Status Messages */}
