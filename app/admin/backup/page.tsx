@@ -31,6 +31,10 @@ export default function AdminBackupPage() {
     const [backupLogs, setBackupLogs] = useState<BackupLog[]>([]);
     const [backingUp, setBackingUp] = useState<string | null>(null);
     const [lastBackup, setLastBackup] = useState<string | null>(null);
+    const [restoring, setRestoring] = useState(false);
+    const [restoreFile, setRestoreFile] = useState<any>(null);
+    const [restoreFileName, setRestoreFileName] = useState('');
+    const [selectedTables, setSelectedTables] = useState<string[]>(['rooms', 'users', 'room_schedules', 'bookings', 'feedbacks']);
 
     const fetchData = async () => {
         try {
@@ -133,6 +137,103 @@ export default function AdminBackupPage() {
             });
         } finally {
             setBackingUp(null);
+        }
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setRestoreFileName(file.name);
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                const json = JSON.parse(ev.target?.result as string);
+                if (!json.metadata || !json.database) {
+                    Swal.fire({ title: 'ไฟล์ไม่ถูกต้อง', text: 'ไฟล์สำรองต้องมี metadata และ database', icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', background: '#23272b', color: '#e5e7eb' });
+                    setRestoreFile(null);
+                    setRestoreFileName('');
+                    return;
+                }
+                setRestoreFile(json);
+            } catch {
+                Swal.fire({ title: 'ไฟล์ไม่ถูกต้อง', text: 'ไม่สามารถอ่านไฟล์ JSON ได้', icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', background: '#23272b', color: '#e5e7eb' });
+                setRestoreFile(null);
+                setRestoreFileName('');
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const toggleTable = (table: string) => {
+        setSelectedTables(prev => prev.includes(table) ? prev.filter(t => t !== table) : [...prev, table]);
+    };
+
+    const handleRestore = async () => {
+        if (!restoreFile || selectedTables.length === 0) return;
+
+        const step1 = await Swal.fire({
+            title: '⚠️ ยืนยันการกู้คืนข้อมูล',
+            html: `<div class="text-left space-y-2"><p class="text-gray-300 text-sm">ตารางที่จะกู้คืน:</p><p class="text-amber-400 font-mono text-sm">${selectedTables.join(', ')}</p><p class="text-red-400 text-xs mt-3">⚠️ ข้อมูลเดิมในตารางที่เลือกจะถูกแทนที่!</p></div>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'ดำเนินการต่อ',
+            cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#f59e0b',
+            cancelButtonColor: '#6b7280',
+            reverseButtons: true,
+            background: '#23272b',
+            color: '#e5e7eb',
+        });
+        if (!step1.isConfirmed) return;
+
+        const step2 = await Swal.fire({
+            title: '🔴 ยืนยันครั้งสุดท้าย',
+            text: 'การกู้คืนข้อมูลไม่สามารถย้อนกลับได้ คุณแน่ใจหรือไม่?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'ยืนยัน กู้คืนเลย',
+            cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            reverseButtons: true,
+            background: '#23272b',
+            color: '#e5e7eb',
+        });
+        if (!step2.isConfirmed) return;
+
+        setRestoring(true);
+        try {
+            const res = await fetch('/api/admin/backup/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ backup: restoreFile, tables: selectedTables }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error || 'Restore failed');
+
+            await fetchData();
+
+            const restoredList = data.results.restored.map((r: any) => `<li class="text-emerald-400">✓ ${r.table} (${r.count} รายการ)${r.note ? ` <span class="text-gray-500 text-xs">— ${r.note}</span>` : ''}</li>`).join('');
+            const errorList = data.results.errors.map((e: any) => `<li class="text-red-400">✗ ${e.table}: ${e.error}</li>`).join('');
+            const skippedList = data.results.skipped.map((s: string) => `<li class="text-gray-500">— ${s} (ข้าม)</li>`).join('');
+
+            Swal.fire({
+                title: data.results.errors.length > 0 ? 'กู้คืนบางส่วนสำเร็จ' : 'กู้คืนข้อมูลสำเร็จ!',
+                html: `<ul class="text-left text-sm space-y-1 mt-2">${restoredList}${errorList}${skippedList}</ul>`,
+                icon: data.results.errors.length > 0 ? 'warning' : 'success',
+                confirmButtonText: 'ตกลง',
+                confirmButtonColor: '#6366f1',
+                background: '#23272b',
+                color: '#e5e7eb',
+            });
+
+            setRestoreFile(null);
+            setRestoreFileName('');
+        } catch (err: any) {
+            Swal.fire({ title: 'เกิดข้อผิดพลาด', text: err.message || 'ไม่สามารถกู้คืนข้อมูลได้', icon: 'error', confirmButtonText: 'ปิด', confirmButtonColor: '#dc2626', background: '#23272b', color: '#e5e7eb' });
+        } finally {
+            setRestoring(false);
         }
     };
 
@@ -325,6 +426,99 @@ export default function AdminBackupPage() {
                     </div>
                 </div>
 
+                {/* ============ Restore Section ============ */}
+                <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 overflow-hidden mb-8">
+                    <div className="h-1.5 bg-gradient-to-r from-orange-500 to-red-500"></div>
+                    <div className="p-6">
+                        <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-3">
+                            <span className="w-1.5 h-6 rounded-full bg-orange-500"></span>
+                            กู้คืนข้อมูล
+                        </h3>
+                        <p className="text-gray-500 text-sm mb-6">อัปโหลดไฟล์สำรอง (.json) เพื่อกู้คืนข้อมูลกลับเข้าสู่ระบบ</p>
+
+                        {/* File Upload Area */}
+                        <div className="mb-6">
+                            <label className="block">
+                                <div className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 ${restoreFile ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-gray-700 hover:border-indigo-500/40 hover:bg-indigo-500/5'}`}>
+                                    {restoreFile ? (
+                                        <div>
+                                            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-3 border border-emerald-500/20">
+                                                <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                            </div>
+                                            <p className="text-emerald-400 font-medium text-sm">{restoreFileName}</p>
+                                            <p className="text-gray-500 text-xs mt-1">สร้างเมื่อ: {new Date(restoreFile.metadata.created_at).toLocaleString('th-TH')}</p>
+                                            <p className="text-gray-500 text-xs">ประเภท: {restoreFile.metadata.type === 'full' ? 'สำรองทั้งหมด' : restoreFile.metadata.type === 'database' ? 'ฐานข้อมูล' : 'ระบบ'}</p>
+                                            <button type="button" onClick={(e) => { e.preventDefault(); setRestoreFile(null); setRestoreFileName(''); }} className="mt-3 text-xs text-red-400 hover:text-red-300 transition-colors">เปลี่ยนไฟล์</button>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <div className="w-14 h-14 rounded-2xl bg-gray-800 flex items-center justify-center mx-auto mb-3 border border-gray-700">
+                                                <svg className="w-7 h-7 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                                            </div>
+                                            <p className="text-gray-300 font-medium text-sm">คลิกเพื่อเลือกไฟล์สำรอง</p>
+                                            <p className="text-gray-600 text-xs mt-1">รองรับไฟล์ .json ที่สร้างจากระบบสำรองข้อมูล</p>
+                                        </div>
+                                    )}
+                                </div>
+                                <input type="file" accept=".json" className="hidden" onChange={handleFileUpload} />
+                            </label>
+                        </div>
+
+                        {/* Table Selection */}
+                        {restoreFile && restoreFile.database && (
+                            <div className="mb-6">
+                                <p className="text-gray-400 text-sm font-medium mb-3">เลือกตารางที่ต้องการกู้คืน:</p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                                    {[
+                                        { key: 'rooms', label: 'ห้องประชุม', icon: '🏢', count: restoreFile.database.rooms?.length || 0 },
+                                        { key: 'users', label: 'ผู้ใช้', icon: '👥', count: restoreFile.database.users?.length || 0 },
+                                        { key: 'room_schedules', label: 'ตารางเรียน', icon: '📋', count: restoreFile.database.room_schedules?.length || 0 },
+                                        { key: 'bookings', label: 'การจอง', icon: '📅', count: restoreFile.database.bookings?.length || 0 },
+                                        { key: 'feedbacks', label: 'ความคิดเห็น', icon: '💬', count: restoreFile.database.feedbacks?.length || 0 },
+                                    ].map(({ key, label, icon, count }) => (
+                                        <button
+                                            key={key}
+                                            type="button"
+                                            onClick={() => toggleTable(key)}
+                                            disabled={count === 0}
+                                            className={`p-3 rounded-xl border text-left transition-all duration-200 ${selectedTables.includes(key) && count > 0
+                                                ? 'bg-indigo-500/10 border-indigo-500/30 text-white'
+                                                : count === 0
+                                                    ? 'bg-gray-800/30 border-gray-800 text-gray-600 cursor-not-allowed'
+                                                    : 'bg-[#1a1d21] border-gray-800 text-gray-400 hover:border-gray-700'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span>{icon}</span>
+                                                <span className="text-xs font-medium">{label}</span>
+                                                {selectedTables.includes(key) && count > 0 && (
+                                                    <svg className="w-3.5 h-3.5 text-indigo-400 ml-auto" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-gray-600">{count} รายการ</p>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Restore Button */}
+                        {restoreFile && (
+                            <button
+                                onClick={handleRestore}
+                                disabled={restoring || selectedTables.length === 0}
+                                className="w-full sm:w-auto py-3 px-8 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {restoring ? (
+                                    <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div> กำลังกู้คืนข้อมูล...</>
+                                ) : (
+                                    <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> กู้คืนข้อมูล ({selectedTables.length} ตาราง)</>
+                                )}
+                            </button>
+                        )}
+                    </div>
+                </div>
+
                 {/* Backup History */}
                 <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 p-6 mb-8">
                     <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-3">
@@ -356,10 +550,14 @@ export default function AdminBackupPage() {
                                             <td className="px-4 py-3 text-sm text-gray-400">{log.file_size || '-'}</td>
                                             <td className="px-4 py-3">
                                                 <span className={`px-2.5 py-1 rounded-lg text-xs font-medium border ${log.status === 'success'
-                                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                                        : 'bg-red-500/10 text-red-400 border-red-500/20'
+                                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                                    : log.status === 'restored'
+                                                        ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+                                                        : log.status === 'partial'
+                                                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                                            : 'bg-red-500/10 text-red-400 border-red-500/20'
                                                     }`}>
-                                                    {log.status === 'success' ? '✓ สำเร็จ' : '✗ ล้มเหลว'}
+                                                    {log.status === 'success' ? '✓ สำรองสำเร็จ' : log.status === 'restored' ? '↻ กู้คืนสำเร็จ' : log.status === 'partial' ? '⚠ กู้คืนบางส่วน' : '✗ ล้มเหลว'}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-400">
