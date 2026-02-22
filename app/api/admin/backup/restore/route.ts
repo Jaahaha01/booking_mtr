@@ -173,6 +173,18 @@ export async function POST(request: NextRequest) {
             }
         });
 
+        // Reset sequences ให้ตรงกับข้อมูลที่ restore (ป้องกัน duplicate key)
+        try {
+            await db`SELECT setval(pg_get_serial_sequence('rooms', 'room_id'), COALESCE((SELECT MAX(room_id) FROM rooms), 0) + 1, false)`;
+            await db`SELECT setval(pg_get_serial_sequence('users', 'user_id'), COALESCE((SELECT MAX(user_id) FROM users), 0) + 1, false)`;
+            await db`SELECT setval(pg_get_serial_sequence('room_schedules', 'schedule_id'), COALESCE((SELECT MAX(schedule_id) FROM room_schedules), 0) + 1, false)`;
+            await db`SELECT setval(pg_get_serial_sequence('bookings', 'booking_id'), COALESCE((SELECT MAX(booking_id) FROM bookings), 0) + 1, false)`;
+            await db`SELECT setval(pg_get_serial_sequence('feedbacks', 'feedback_id'), COALESCE((SELECT MAX(feedback_id) FROM feedbacks), 0) + 1, false)`;
+            await db`SELECT setval(pg_get_serial_sequence('backup_logs', 'log_id'), COALESCE((SELECT MAX(log_id) FROM backup_logs), 0) + 1, false)`;
+        } catch (seqError) {
+            console.error('Error resetting sequences:', seqError);
+        }
+
         // บันทึก log (นอก transaction)
         try {
             const restoredTables = results.restored.map((r: any) => r.table).join(', ');

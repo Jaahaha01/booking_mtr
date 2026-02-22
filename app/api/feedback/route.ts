@@ -22,6 +22,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'คุณได้ให้คะแนนการจองนี้ไปแล้ว' }, { status: 400 });
         }
 
+        // Reset sequence ป้องกัน duplicate key หลังจาก restore ข้อมูล
+        await db`SELECT setval(pg_get_serial_sequence('feedbacks', 'feedback_id'), COALESCE((SELECT MAX(feedback_id) FROM feedbacks), 0) + 1, false)`;
+
         // Insert feedback
         await db`
       INSERT INTO feedbacks (booking_id, rating, comment, image_url)
