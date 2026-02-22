@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
-    
+
     if (!userId) {
       return NextResponse.json(
         { error: 'กรุณาเข้าสู่ระบบก่อน' },
@@ -29,9 +29,11 @@ export async function GET() {
         r.name as room_name,
         r.capacity as room_capacity,
         (SELECT u2.fname || ' ' || u2.lname FROM users u2 WHERE u2.user_id = b.confirmed_by) as confirmed_name,
-        (SELECT u3.fname || ' ' || u3.lname FROM users u3 WHERE u3.user_id = b.cancelled_by) as cancelled_name
+        (SELECT u3.fname || ' ' || u3.lname FROM users u3 WHERE u3.user_id = b.cancelled_by) as cancelled_name,
+        f.rating as feedback_rating
       FROM bookings b
       JOIN rooms r ON b.room_id = r.room_id
+      LEFT JOIN feedbacks f ON f.booking_id = b.booking_id
       WHERE b.user_id = ${userId}
       ORDER BY b.created_at DESC
     `;
