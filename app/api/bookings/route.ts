@@ -11,6 +11,7 @@ export async function GET() {
     const rows = await db`
       SELECT
         b.booking_id,
+        b.room_id,
         b.title,
         b.start,
         b.end,
@@ -39,6 +40,7 @@ export async function GET() {
 
     const events = rows.map((b: any) => ({
       booking_id: b.booking_id,
+      room_id: b.room_id,
       title: b.title,
       start: b.start,
       end: b.end,

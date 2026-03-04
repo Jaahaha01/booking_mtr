@@ -350,10 +350,11 @@ function BookingContent() {
       .then(res => res.json())
       .then(data => {
         const now = new Date();
-        // เฉพาะ booking ที่ end > now และห้องที่เลือกเท่านั้น
+        // เฉพาะ booking ที่ end > now, ห้องที่เลือก, และสถานะ pending/confirmed เท่านั้น
         const activeBookings = data.filter((b: any) => {
           const end = new Date(b.end);
-          return end > now && String(b.room_id) === String(form.room_id);
+          return end > now && String(b.room_id) === String(form.room_id)
+            && (b.status === 'pending' || b.status === 'confirmed');
         });
 
         // ปิดวันเฉพาะวันที่ห้องนั้นถูกจองเต็มวัน (Full Day) ไม่ว่าจะเป็นสถานะ pending หรือ confirmed
@@ -416,28 +417,38 @@ function BookingContent() {
     return false;
   }
 
+  // ฟังก์ชันช่วยตรวจสอบว่าช่วงเวลา slot ทับกับ booking ที่มีอยู่หรือไม่ (ใช้ HH:mm เปรียบเทียบ)
+  function isBookingOverlap(slotStart: string, slotEnd: string) {
+    for (const b of roomBookings) {
+      // เฉพาะ pending หรือ confirmed เท่านั้น
+      if (b.status !== 'pending' && b.status !== 'confirmed') continue;
+      const bStart = (b.start || '').slice(11, 16); // "HH:mm"
+      const bEnd = (b.end || '').slice(11, 16);
+      // overlap: slotStart < bEnd && slotEnd > bStart
+      if (slotStart < bEnd && slotEnd > bStart) return true;
+    }
+    return false;
+  }
+
   // ฟังก์ชันช่วยสำหรับ logic disable time slot ตาม booking และตารางเรียนที่มีอยู่ในห้องนั้น
   function getDisabledSlots() {
     let disableMorning = false, disableAfternoon = false, disableFullDay = false;
 
-    // ตรวจสอบจาก bookings
-    for (const b of roomBookings) {
-      const start = b.start.slice(11, 16);
-      const end = b.end.slice(11, 16);
-      if (start === '08:00' && end === '17:00') {
-        disableMorning = true;
-        disableAfternoon = true;
-        disableFullDay = true;
-        break;
-      }
-      if (start === '08:00' && end === '12:00') {
-        disableMorning = true;
-        disableFullDay = true;
-      }
-      if (start === '13:00' && end === '17:00') {
-        disableAfternoon = true;
-        disableFullDay = true;
-      }
+    // ตรวจสอบจาก bookings (pending/confirmed) ด้วย overlap จริง ไม่ใช่แค่ exact match
+    if (isBookingOverlap('08:00', '12:00')) {
+      disableMorning = true;
+      disableFullDay = true;
+    }
+    if (isBookingOverlap('13:00', '17:00')) {
+      disableAfternoon = true;
+      disableFullDay = true;
+    }
+    if (isBookingOverlap('08:00', '17:00')) {
+      disableFullDay = true;
+    }
+    // ถ้าทั้งเช้าและบ่ายถูก disable → ทั้งวันก็ต้อง disable
+    if (disableMorning && disableAfternoon) {
+      disableFullDay = true;
     }
 
     // ตรวจสอบจากตารางเรียน (room_schedules)
@@ -450,7 +461,6 @@ function BookingContent() {
         disableAfternoon = true;
         disableFullDay = true;
       }
-      // ถ้าทั้งเช้าและบ่ายทับ → ทั้งวันก็ทับ
       if (disableMorning && disableAfternoon) {
         disableFullDay = true;
       }
