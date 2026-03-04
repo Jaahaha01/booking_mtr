@@ -359,12 +359,17 @@ function BookingContent() {
 
         // ปิดวันเฉพาะวันที่ห้องนั้นถูกจองเต็มวัน (Full Day) ไม่ว่าจะเป็นสถานะ pending หรือ confirmed
         let fullDayDates: string[] = [];
+        // helper: แปลง ISO/date string เป็น "HH:mm" ตาม local timezone
+        const toLocalHHmm = (dateStr: string) => {
+          const d = new Date(dateStr);
+          return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        };
         // หา booking ของห้องนี้ที่จองเต็มวัน (08:00-17:00) และสถานะ pending หรือ confirmed
         const fullDayBookings = activeBookings.filter((b: any) => {
           if (b.status !== 'pending' && b.status !== 'confirmed') return false;
-          const start = b.start.slice(11, 16);
-          const end = b.end.slice(11, 16);
-          return start === '08:00' && end === '17:00';
+          const startHM = toLocalHHmm(b.start);
+          const endHM = toLocalHHmm(b.end);
+          return startHM === '08:00' && endHM === '17:00';
         });
         fullDayDates = Array.from(new Set(fullDayBookings.map((b: any) => format(parseISO(b.start), 'yyyy-MM-dd'))));
         setBookedDates(fullDayDates);
@@ -417,13 +422,19 @@ function BookingContent() {
     return false;
   }
 
-  // ฟังก์ชันช่วยตรวจสอบว่าช่วงเวลา slot ทับกับ booking ที่มีอยู่หรือไม่ (ใช้ HH:mm เปรียบเทียบ)
+  // helper: แปลง ISO/date string เป็น "HH:mm" ตาม local timezone
+  function toLocalHHmm(dateStr: string) {
+    const d = new Date(dateStr);
+    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  }
+
+  // ฟังก์ชันช่วยตรวจสอบว่าช่วงเวลา slot ทับกับ booking ที่มีอยู่หรือไม่ (ใช้ HH:mm local time เปรียบเทียบ)
   function isBookingOverlap(slotStart: string, slotEnd: string) {
     for (const b of roomBookings) {
       // เฉพาะ pending หรือ confirmed เท่านั้น
       if (b.status !== 'pending' && b.status !== 'confirmed') continue;
-      const bStart = (b.start || '').slice(11, 16); // "HH:mm"
-      const bEnd = (b.end || '').slice(11, 16);
+      const bStart = toLocalHHmm(b.start); // แปลงเป็น local "HH:mm"
+      const bEnd = toLocalHHmm(b.end);
       // overlap: slotStart < bEnd && slotEnd > bStart
       if (slotStart < bEnd && slotEnd > bStart) return true;
     }
