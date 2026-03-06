@@ -1,0 +1,101 @@
+﻿  Γû▓ Next.js 14.2.20
+  - Environments: .env.local, .env.production
+
+node.exe : (node:690156) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED 
+environment variable to '0' makes TLS connections and HTTPS requests insecure 
+by disabling certificate verification.
+At C:\Users\jaaha\AppData\Roaming\npm\npx.ps1:24 char:5
++     & "node$exe"  "$basedir/node_modules/npm/bin/npx-cli.js" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:690156) W...e verification. 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-warnings ...` to show where the warning was created)
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/30) ...
+   Generating static pages (7/30) 
+   Generating static pages (14/30) 
+   Generating static pages (22/30) 
+(node:695668) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment 
+variable to '0' makes TLS connections and HTTPS requests insecure by disabling 
+certificate verification.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:694992) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment 
+variable to '0' makes TLS connections and HTTPS requests insecure by disabling 
+certificate verification.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Γ£à Database pool connected
+Γ£à Database pool connected
+ Γ£ô Generating static pages (30/30)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                               Size     First Load JS
+Γöî Γùï /                                     89 kB           176 kB
+Γö£ Γùï /_not-found                           876 B          88.3 kB
+Γö£ Γùï /admin                                2.13 kB        96.4 kB
+Γö£ Γùï /admin/backup                         7.45 kB         126 kB
+Γö£ Γùï /admin/bookings                       6.26 kB         101 kB
+Γö£ Γùï /admin/dashboard                      129 kB          223 kB
+Γö£ Γùï /admin/feedbacks                      5.21 kB        99.5 kB
+Γö£ Γùï /admin/profile                        6.16 kB         106 kB
+Γö£ Γùï /admin/rooms                          6.04 kB         100 kB
+Γö£ Γùï /admin/statistics                     72.1 kB         166 kB
+Γö£ Γùï /admin/users                          5.1 kB          124 kB
+Γö£ ╞Æ /api/admin/backup                     0 B                0 B
+Γö£ ╞Æ /api/admin/backup/restore             0 B                0 B
+Γö£ ╞Æ /api/admin/backup/system-zip          0 B                0 B
+Γö£ ╞Æ /api/admin/bookings                   0 B                0 B
+Γö£ ╞Æ /api/admin/bookings/[id]              0 B                0 B
+Γö£ ╞Æ /api/admin/dashboard/advanced-stats   0 B                0 B
+Γö£ ╞Æ /api/admin/dashboard/stats            0 B                0 B
+Γö£ ╞Æ /api/admin/rooms                      0 B                0 B
+Γö£ ╞Æ /api/admin/rooms/[id]                 0 B                0 B
+Γö£ ╞Æ /api/admin/users                      0 B                0 B
+Γö£ ╞Æ /api/admin/users/[id]                 0 B                0 B
+Γö£ ╞Æ /api/admin/users/[id]/reset-password  0 B                0 B
+Γö£ ╞Æ /api/bookings                         0 B                0 B
+Γö£ ╞Æ /api/bookings/[id]                    0 B                0 B
+Γö£ ╞Æ /api/bookings/latest-status           0 B                0 B
+Γö£ ╞Æ /api/bookings/my-bookings             0 B                0 B
+Γö£ ╞Æ /api/chatbot                          0 B                0 B
+Γö£ ╞Æ /api/dashboard                        0 B                0 B
+Γö£ ╞Æ /api/feedback                         0 B                0 B
+Γö£ ╞Æ /api/feedbacks                        0 B                0 B
+Γö£ ╞Æ /api/health                           0 B                0 B
+Γö£ ╞Æ /api/login                            0 B                0 B
+Γö£ ╞Æ /api/logout                           0 B                0 B
+Γö£ ╞Æ /api/profile                          0 B                0 B
+Γö£ ╞Æ /api/register                         0 B                0 B
+Γö£ ╞Æ /api/room-schedules                   0 B                0 B
+Γö£ ╞Æ /api/rooms                            0 B                0 B
+Γö£ Γùï /api/rooms/availability               0 B                0 B
+Γö£ ╞Æ /api/rooms/statistics                 0 B                0 B
+Γö£ Γùï /api/setup-feedback                   0 B                0 B
+Γö£ ╞Æ /api/upload                           0 B                0 B
+Γö£ ╞Æ /api/verify-identity                  0 B                0 B
+Γö£ ╞Æ /api/webhook/line                     0 B                0 B
+Γö£ Γùï /booking                              54.5 kB         149 kB
+Γö£ ╞Æ /booking/edit/[id]                    3.88 kB        98.2 kB
+Γö£ Γùï /bookings                             3.19 kB        97.5 kB
+Γö£ Γùï /dashboard                            25.9 kB         120 kB
+Γö£ Γùï /history                              3.87 kB        98.2 kB
+Γö£ Γùï /login                                2.96 kB        97.2 kB
+Γö£ Γùï /profile                              5.13 kB         105 kB
+Γö£ Γùï /register                             3.25 kB        97.5 kB
+Γö£ Γùï /rooms/availability                   3.41 kB        97.7 kB
+Γö£ Γùï /rooms/statistics                     4.11 kB        98.4 kB
+Γöö Γùï /verify                               3.79 kB        98.1 kB
++ First Load JS shared by all             87.4 kB
+  Γö£ chunks/117-b6d39a05ffbaaae8.js        31.8 kB
+  Γö£ chunks/fd9d1056-e640a4a6e352cb76.js   53.6 kB
+  Γöö other shared chunks (total)           2.04 kB
+
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

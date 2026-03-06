@@ -29,7 +29,7 @@ function validateThaiID(id: string): { valid: boolean; expectedDigit?: number } 
 
   // คำนวณ check digit
   const remainder = sum % 11;
-  let checkDigit = (11 - remainder) % 10;
+  const checkDigit = (11 - remainder) % 10;
 
   const lastDigit = parseInt(id.charAt(12));
   return { valid: checkDigit === lastDigit, expectedDigit: checkDigit };
@@ -275,8 +275,8 @@ export default function VerifyIdentityPage() {
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg className={`h-5 w-5 ${idCardStatus === 'valid' ? 'text-green-500' :
-                          idCardStatus === 'invalid' ? 'text-red-500' :
-                            'text-gray-400'
+                        idCardStatus === 'invalid' ? 'text-red-500' :
+                          'text-gray-400'
                         }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                       </svg>
@@ -289,10 +289,10 @@ export default function VerifyIdentityPage() {
                       value={form.identity_card}
                       onChange={handleInputChange}
                       className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-all duration-200 ${idCardStatus === 'valid'
-                          ? 'border-green-400 focus:ring-green-500 bg-green-50'
-                          : idCardStatus === 'invalid'
-                            ? 'border-red-400 focus:ring-red-500 bg-red-50'
-                            : 'border-gray-300 focus:ring-blue-500'
+                        ? 'border-green-400 focus:ring-green-500 bg-green-50'
+                        : idCardStatus === 'invalid'
+                          ? 'border-red-400 focus:ring-red-500 bg-red-50'
+                          : 'border-gray-300 focus:ring-blue-500'
                         }`}
                       placeholder="กรอกหมายเลขบัตรประชาชน 13 หลัก"
                     />
