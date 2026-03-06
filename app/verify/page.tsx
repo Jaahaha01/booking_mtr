@@ -15,6 +15,32 @@ interface UserProfile extends Record<string, unknown> {
   verification_status?: VerificationStatus;
 }
 
+// ฟังก์ชันตรวจสอบความถูกต้องของเลขบัตรประชาชนไทย 13 หลัก
+function validateThaiID(id: string): { valid: boolean; expectedDigit?: number } {
+  if (id.length !== 13 || !/^\d{13}$/.test(id)) {
+    return { valid: false };
+  }
+
+  // นำ 12 หลักแรกมาคำนวณ
+  let sum = 0;
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(id.charAt(i)) * (13 - i);
+  }
+
+  // คำนวณ check digit
+  const remainder = sum % 11;
+  let checkDigit = (11 - remainder) % 10;
+
+  const lastDigit = parseInt(id.charAt(12));
+  return { valid: checkDigit === lastDigit, expectedDigit: checkDigit };
+}
+
+// ฟังก์ชันจัดรูปแบบเลขบัตรประชาชน X-XXXX-XXXXX-XX-X
+function formatThaiID(id: string): string {
+  if (id.length !== 13) return id;
+  return `${id[0]}-${id.substring(1, 5)}-${id.substring(5, 10)}-${id.substring(10, 12)}-${id[12]}`;
+}
+
 export default function VerifyIdentityPage() {
   const router = useRouter();
   const [form, setForm] = useState<VerifyForm>({
@@ -27,6 +53,7 @@ export default function VerifyIdentityPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [idCardStatus, setIdCardStatus] = useState<'empty' | 'incomplete' | 'valid' | 'invalid'>('empty');
 
   useEffect(() => {
     // ตรวจสอบการเข้าสู่ระบบ
@@ -37,7 +64,7 @@ export default function VerifyIdentityPage() {
           router.push('/login');
           return;
         }
-        
+
         const userData: UserProfile = await response.json();
         setUser(userData);
 
@@ -83,6 +110,14 @@ export default function VerifyIdentityPage() {
       return;
     }
 
+    // ตรวจสอบ checksum ของเลขบัตรประชาชน
+    const idValidation = validateThaiID(form.identity_card);
+    if (!idValidation.valid) {
+      setError(`หมายเลขบัตรประชาชนไม่ถูกต้อง — เลขหลักสุดท้ายควรเป็น ${idValidation.expectedDigit}`);
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/verify-identity', {
         method: 'POST',
@@ -101,7 +136,7 @@ export default function VerifyIdentityPage() {
       }
 
       setSuccess('ส่งข้อมูลการยืนยันตัวตนสำเร็จ กรุณารอการอนุมัติจากเจ้าหน้าที่');
-      
+
       // อัปเดตข้อมูลผู้ใช้ใน state
       const updatedUser = { ...user, verification_status: 'pending' };
       setUser(updatedUser);
@@ -131,6 +166,25 @@ export default function VerifyIdentityPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+
+    if (name === 'identity_card') {
+      // อนุญาตเฉพาะตัวเลขเท่านั้น
+      const numericValue = value.replace(/\D/g, '').slice(0, 13);
+      setForm(prev => ({ ...prev, identity_card: numericValue }));
+
+      // อัปเดตสถานะการตรวจสอบ
+      if (numericValue.length === 0) {
+        setIdCardStatus('empty');
+      } else if (numericValue.length < 13) {
+        setIdCardStatus('incomplete');
+      } else {
+        // ครบ 13 หลัก → ตรวจสอบ checksum
+        const result = validateThaiID(numericValue);
+        setIdCardStatus(result.valid ? 'valid' : 'invalid');
+      }
+      return;
+    }
+
     setForm(prev => ({
       ...prev,
       [name]: value
@@ -160,7 +214,7 @@ export default function VerifyIdentityPage() {
           </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">ยืนยันตัวตน</h1>
           <p className="text-lg text-gray-600">
-            {user?.verification_status === 'pending' 
+            {user?.verification_status === 'pending'
               ? 'คุณได้ส่งข้อมูลการยืนยันตัวตนแล้ว กรุณารอการอนุมัติจากเจ้าหน้าที่'
               : 'กรุณากรอกข้อมูลเพิ่มเติมเพื่อยืนยันตัวตนก่อนจองห้องประชุม'
             }
@@ -188,7 +242,7 @@ export default function VerifyIdentityPage() {
                 กลับหน้าหลัก
               </Link>
             </div>
-                    ) : (
+          ) : (
             <>
               {error && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -213,104 +267,146 @@ export default function VerifyIdentityPage() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
-            {/* ID Card */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                หมายเลขบัตรประชาชน *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                  </svg>
+                {/* ID Card */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    หมายเลขบัตรประชาชน *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className={`h-5 w-5 ${idCardStatus === 'valid' ? 'text-green-500' :
+                          idCardStatus === 'invalid' ? 'text-red-500' :
+                            'text-gray-400'
+                        }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      name="identity_card"
+                      required
+                      maxLength={13}
+                      value={form.identity_card}
+                      onChange={handleInputChange}
+                      className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-all duration-200 ${idCardStatus === 'valid'
+                          ? 'border-green-400 focus:ring-green-500 bg-green-50'
+                          : idCardStatus === 'invalid'
+                            ? 'border-red-400 focus:ring-red-500 bg-red-50'
+                            : 'border-gray-300 focus:ring-blue-500'
+                        }`}
+                      placeholder="กรอกหมายเลขบัตรประชาชน 13 หลัก"
+                    />
+                    {/* ไอคอนแสดงสถานะทางขวา */}
+                    {idCardStatus === 'valid' && (
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                    {idCardStatus === 'invalid' && (
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ข้อความแสดงสถานะ */}
+                  {idCardStatus === 'empty' && (
+                    <p className="mt-1 text-sm text-gray-500">
+                      กรอกหมายเลขบัตรประชาชน 13 หลัก (เฉพาะตัวเลข)
+                    </p>
+                  )}
+                  {idCardStatus === 'incomplete' && (
+                    <p className="mt-1 text-sm text-blue-500">
+                      กรอกแล้ว {form.identity_card.length}/13 หลัก
+                    </p>
+                  )}
+                  {idCardStatus === 'valid' && (
+                    <p className="mt-1 text-sm text-green-600 font-medium">
+                      ✓ หมายเลขบัตรประชาชนถูกต้อง ({formatThaiID(form.identity_card)})
+                    </p>
+                  )}
+                  {idCardStatus === 'invalid' && (
+                    <p className="mt-1 text-sm text-red-600 font-medium">
+                      ✗ หมายเลขบัตรประชาชนไม่ถูกต้อง — เลขหลักสุดท้ายไม่ตรงกับผลการคำนวณ
+                    </p>
+                  )}
                 </div>
-                <input
-                  type="text"
-                  name="identity_card"
-                  required
-                  maxLength={13}
-                  value={form.identity_card}
-                  onChange={handleInputChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="กรอกหมายเลขบัตรประชาชน 13 หลัก"
-                />
-              </div>
-              <p className="mt-1 text-sm text-gray-500">
-                กรอกหมายเลขบัตรประชาชน 13 หลัก (เฉพาะตัวเลข)
-              </p>
-            </div>
 
-            {/* Address */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ที่อยู่ *
-              </label>
-              <textarea
-                name="address"
-                required
-                rows={3}
-                value={form.address}
-                onChange={handleInputChange}
-                className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
-                placeholder="กรอกที่อยู่ที่สมบูรณ์"
-              />
-            </div>
-
-            {/* Organization */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ชื่อสำนักงาน/องค์กร *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
+                {/* Address */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ที่อยู่ *
+                  </label>
+                  <textarea
+                    name="address"
+                    required
+                    rows={3}
+                    value={form.address}
+                    onChange={handleInputChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                    placeholder="กรอกที่อยู่ที่สมบูรณ์"
+                  />
                 </div>
-                <input
-                  type="text"
-                  name="organization"
-                  required
-                  value={form.organization}
-                  onChange={handleInputChange}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="ชื่อสำนักงานหรือองค์กรที่สังกัด"
-                />
+
+                {/* Organization */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ชื่อสำนักงาน/องค์กร *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      name="organization"
+                      required
+                      value={form.organization}
+                      onChange={handleInputChange}
+                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      placeholder="ชื่อสำนักงานหรือองค์กรที่สังกัด"
+                    />
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      กำลังยืนยันตัวตน...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      ยืนยันตัวตน
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Info Box */}
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2">ข้อมูลที่จำเป็น</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• หมายเลขบัตรประชาชน 13 หลัก</li>
+                  <li>• ที่อยู่ที่สมบูรณ์</li>
+                  <li>• ชื่อสำนักงานหรือองค์กรที่สังกัด</li>
+                  <li>• ข้อมูลจะถูกใช้เพื่อการยืนยันตัวตนเท่านั้น</li>
+                </ul>
               </div>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center gap-2"
-            >
-              {submitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  กำลังยืนยันตัวตน...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  ยืนยันตัวตน
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Info Box */}
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h4 className="font-medium text-blue-900 mb-2">ข้อมูลที่จำเป็น</h4>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• หมายเลขบัตรประชาชน 13 หลัก</li>
-              <li>• ที่อยู่ที่สมบูรณ์</li>
-              <li>• ชื่อสำนักงานหรือองค์กรที่สังกัด</li>
-              <li>• ข้อมูลจะถูกใช้เพื่อการยืนยันตัวตนเท่านั้น</li>
-            </ul>
-          </div>
             </>
           )}
         </div>
@@ -318,8 +414,8 @@ export default function VerifyIdentityPage() {
         {/* Footer */}
         {user?.verification_status !== 'pending' && (
           <div className="text-center mt-6">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200"
             >
               ← กลับหน้าหลัก
