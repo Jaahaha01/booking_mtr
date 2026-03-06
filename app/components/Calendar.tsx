@@ -107,19 +107,36 @@ export default function CalendarComponent() {
     }
   }
 
+  // แปลง Date เป็น local ISO string (ไม่มี timezone suffix)
+  // เพื่อให้ FullCalendar ไม่แปลง timezone ซ้ำ
+  function toLocalISOString(d: Date): string {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  }
+
   // ดึง event จริงจาก API
   const fetchEvents = useCallback(() => {
     fetch('/api/bookings')
       .then(res => res.json())
       .then(data => {
-        // แปลงข้อมูลจาก API โดยใช้ข้อมูลตรงตามฐานข้อมูล
+        // แปลงข้อมูลจาก API
         const mapped = data.map((ev: any) => {
           const statusColor = getStatusColor(ev.status);
+          // แปลงเวลาเป็น local time string เพื่อป้องกัน FullCalendar แปลง timezone ผิดพลาด
+          const startDate = new Date(ev.start);
+          const endDate = new Date(ev.end);
           return {
             ...ev,
+            start: toLocalISOString(startDate),
+            end: toLocalISOString(endDate),
             backgroundColor: statusColor,
             borderColor: statusColor,
-            allDay: false, // กำหนดให้เป็น event แบบมีเวลาเฉพาะ
+            allDay: false,
           };
         });
         try {
@@ -249,15 +266,14 @@ export default function CalendarComponent() {
       </div>
 
       <div className="px-2 sm:px-4 md:px-6 pb-4 sm:pb-6">
-        <div className="calendar-wrapper" style={{ minHeight: isMobile ? 450 : 600 }}>
+        <div className="calendar-wrapper" style={{ minHeight: isMobile ? 420 : 480 }}>
           <FullCalendar
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
-            initialView={isMobile ? 'listWeek' : 'dayGridWeek'}
+            initialView={isMobile ? 'dayGridMonth' : 'dayGridWeek'}
             locale={thLocale}
-            timeZone="local"
             now={getNowInThailand()}
-            height={isMobile ? 450 : 600}
+            height={isMobile ? 420 : 480}
             events={events}
             eventMouseEnter={handleEventMouseEnter}
             eventMouseLeave={handleEventMouseLeave}
@@ -273,11 +289,7 @@ export default function CalendarComponent() {
               minute: '2-digit',
               meridiem: false
             }}
-            headerToolbar={isMobile ? {
-              left: 'prev,next today',
-              center: 'title',
-              right: 'dayGridMonth,listWeek',
-            } : {
+            headerToolbar={{
               left: 'prev,next today',
               center: 'title',
               right: 'dayGridMonth,dayGridWeek,timeGridDay,listWeek',
@@ -394,7 +406,7 @@ export default function CalendarComponent() {
           /* ให้ scroller ใน timeGrid สามารถ scroll แนวตั้งได้ */
           .fc .fc-timegrid .fc-scroller {
             overflow-y: auto !important;
-            max-height: 600px !important;
+            max-height: 480px !important;
           }
           @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -527,7 +539,7 @@ export default function CalendarComponent() {
           }
           .fc .fc-scroller {
             overflow-y: auto !important;
-            max-height: 600px !important;
+            max-height: 480px !important;
           }
 
           /* =========== MORE LINK =========== */
@@ -639,10 +651,10 @@ export default function CalendarComponent() {
 
             /* Scroller height */
             .fc .fc-scroller {
-              max-height: 450px !important;
+              max-height: 420px !important;
             }
             .fc .fc-timegrid .fc-scroller {
-              max-height: 450px !important;
+              max-height: 420px !important;
             }
           }
 
