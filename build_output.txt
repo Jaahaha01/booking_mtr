@@ -1,18 +1,22 @@
 ﻿  Γû▓ Next.js 14.2.20
   - Environments: .env.local, .env.production
 
-node.exe : (node:690156) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED 
+node.exe : (node:694280) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED 
 environment variable to '0' makes TLS connections and HTTPS requests insecure 
 by disabling certificate verification.
 At C:\Users\jaaha\AppData\Roaming\npm\npx.ps1:24 char:5
 +     & "node$exe"  "$basedir/node_modules/npm/bin/npx-cli.js" $args
 +     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: ((node:690156) W...e verification. 
+    + CategoryInfo          : NotSpecified: ((node:694280) W...e verification. 
    :String) [], RemoteException
     + FullyQualifiedErrorId : NativeCommandError
  
 (Use `node --trace-warnings ...` to show where the warning was created)
    Creating an optimized production build ...
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: 
+https://github.com/browserslist/update-db#readme
  Γ£ô Compiled successfully
    Linting and checking validity of types ...
    Collecting page data ...
@@ -20,11 +24,11 @@ At C:\Users\jaaha\AppData\Roaming\npm\npx.ps1:24 char:5
    Generating static pages (7/30) 
    Generating static pages (14/30) 
    Generating static pages (22/30) 
-(node:695668) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment 
+(node:677492) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment 
 variable to '0' makes TLS connections and HTTPS requests insecure by disabling 
 certificate verification.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:694992) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment 
+(node:690472) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment 
 variable to '0' makes TLS connections and HTTPS requests insecure by disabling 
 certificate verification.
 (Use `node --trace-warnings ...` to show where the warning was created)
@@ -35,7 +39,7 @@ certificate verification.
    Collecting build traces ...
 
 Route (app)                               Size     First Load JS
-Γöî Γùï /                                     89 kB           176 kB
+Γöî Γùï /                                     89.9 kB         177 kB
 Γö£ Γùï /_not-found                           876 B          88.3 kB
 Γö£ Γùï /admin                                2.13 kB        96.4 kB
 Γö£ Γùï /admin/backup                         7.45 kB         126 kB
@@ -89,7 +93,7 @@ Route (app)                               Size     First Load JS
 Γö£ Γùï /register                             3.25 kB        97.5 kB
 Γö£ Γùï /rooms/availability                   3.41 kB        97.7 kB
 Γö£ Γùï /rooms/statistics                     4.11 kB        98.4 kB
-Γöö Γùï /verify                               3.79 kB        98.1 kB
+Γöö Γùï /verify                               3.77 kB        98.1 kB
 + First Load JS shared by all             87.4 kB
   Γö£ chunks/117-b6d39a05ffbaaae8.js        31.8 kB
   Γö£ chunks/fd9d1056-e640a4a6e352cb76.js   53.6 kB

@@ -331,7 +331,7 @@ export default function VerifyIdentityPage() {
                   )}
                   {idCardStatus === 'invalid' && (
                     <p className="mt-1 text-sm text-red-600 font-medium">
-                      ✗ หมายเลขบัตรประชาชนไม่ถูกต้อง — เลขหลักสุดท้ายไม่ตรงกับผลการคำนวณ
+                      ✗ หมายเลขบัตรประชาชนไม่ถูกต้อง
                     </p>
                   )}
                 </div>
