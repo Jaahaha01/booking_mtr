@@ -308,7 +308,6 @@ export default function CalendarComponent() {
                 slotLabelInterval: '00:30:00',
                 snapDuration: '00:30:00',
                 displayEventEnd: true,
-                eventMinHeight: 30,
               },
               timeGridWeek: {
                 slotMinTime: '07:00:00',
@@ -511,18 +510,20 @@ export default function CalendarComponent() {
 
           /* =========== TIMEGRID =========== */
           .fc .fc-timegrid-slot {
-            min-height: 24px !important;
-            height: 24px !important;
+            height: auto !important;
+            min-height: 1.5em !important;
           }
           .fc .fc-timegrid .fc-timegrid-event {
             box-sizing: border-box !important;
-            border-bottom-left-radius: 0 !important;
-            border-bottom-right-radius: 0 !important;
             overflow: hidden !important;
           }
           .fc .fc-timegrid-event .fc-event-main {
             overflow: hidden !important;
             word-break: break-word !important;
+          }
+          /* ให้ event harness ใน timegrid แสดงผลถูกต้อง */
+          .fc .fc-timegrid-event-harness {
+            overflow: visible !important;
           }
           .fc .fc-scroller {
             overflow-y: auto !important;
