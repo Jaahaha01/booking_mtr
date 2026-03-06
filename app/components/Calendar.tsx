@@ -255,7 +255,7 @@ export default function CalendarComponent() {
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
             initialView={isMobile ? 'listWeek' : 'dayGridWeek'}
             locale={thLocale}
-            timeZone="Asia/Bangkok"
+            timeZone="local"
             now={getNowInThailand()}
             height={isMobile ? 450 : 600}
             events={events}
@@ -462,6 +462,7 @@ export default function CalendarComponent() {
             color: #1e3a5f !important;
             font-size: 0.8rem !important;
             padding: 2px 4px !important;
+            overflow: hidden !important;
           }
           .fc .fc-event {
             color: #1e3a5f !important;
@@ -474,10 +475,29 @@ export default function CalendarComponent() {
             font-size: 0.8rem !important;
             transition: all 0.3s;
             animation: fadeIn 0.5s;
+            overflow: hidden !important;
           }
           .fc .fc-event:hover {
             box-shadow: 0 4px 16px 0 rgba(14, 165, 233, 0.25);
             opacity: 1;
+          }
+          /* ป้องกันข้อความล้นออกนอก event */
+          .fc .fc-event-main {
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            word-break: break-word !important;
+          }
+          .fc .fc-event-main-frame {
+            overflow: hidden !important;
+          }
+          .fc .fc-event-title-container {
+            overflow: hidden !important;
+          }
+          .fc .fc-event-title {
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: normal !important;
+            word-break: break-word !important;
           }
           .fc .fc-list-event {
             border-radius: 0.5rem !important;
@@ -498,6 +518,11 @@ export default function CalendarComponent() {
             box-sizing: border-box !important;
             border-bottom-left-radius: 0 !important;
             border-bottom-right-radius: 0 !important;
+            overflow: hidden !important;
+          }
+          .fc .fc-timegrid-event .fc-event-main {
+            overflow: hidden !important;
+            word-break: break-word !important;
           }
           .fc .fc-scroller {
             overflow-y: auto !important;
