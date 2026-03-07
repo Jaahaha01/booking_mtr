@@ -12,6 +12,7 @@ export default function CalendarComponent() {
   const [events, setEvents] = useState([]);
   const [allEvents, setAllEvents] = useState([]); // เก็บ event ทั้งหมด
   const [isMobile, setIsMobile] = useState(false);
+  const [showManual, setShowManual] = useState(false);
 
   // ตรวจจับขนาดหน้าจอ
   useEffect(() => {
@@ -234,174 +235,187 @@ export default function CalendarComponent() {
   }, []);
 
   return (
-    <div className="bg-gradient-to-br from-blue-100 via-white to-indigo-100 rounded-2xl shadow-2xl border border-blue-200 p-0 relative">
-      {/* Stylish Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 sm:px-6 pt-4 sm:pt-6 pb-2">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="w-10 h-10 flex-shrink-0 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg animate-bounce">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-700 mb-0 truncate">ตารางการจองห้องประชุม</h2>
-            <p className="text-xs sm:text-sm text-blue-400">ดูตารางการจองห้องประชุมทั้งหมดแบบเรียลไทม์</p>
-          </div>
-        </div>
-        {/* ปุ่ม refresh */}
-        <button onClick={fetchEvents} className="ml-auto px-3 sm:px-4 py-2 bg-blue-500 text-white text-sm rounded-lg shadow-md hover:bg-blue-700 transition-all duration-300 active:scale-95 flex items-center gap-1.5 whitespace-nowrap">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span className="hidden sm:inline">รีเฟรชข้อมูล</span>
-          <span className="sm:hidden">รีเฟรช</span>
-        </button>
-      </div>
-
-      {/* ปุ่ม filter สถานะ */}
-      <div className="flex flex-wrap gap-2 px-4 sm:px-6 pb-2 mt-2">
-        <button onClick={() => setFilter('all')} className={`px-3 py-1.5 rounded-lg font-medium shadow text-sm transition-all duration-300 ${filter === 'all' ? 'bg-blue-600 text-white scale-105' : 'bg-gray-100 text-blue-700 hover:bg-blue-100'}`}>ทั้งหมด</button>
-        <button onClick={() => setFilter('pending')} className={`px-3 py-1.5 rounded-lg font-medium shadow text-sm transition-all duration-300 ${filter === 'pending' ? 'bg-yellow-400 text-yellow-900 scale-105' : 'bg-gray-100 text-yellow-700 hover:bg-yellow-100'}`}>รอดำเนินการ</button>
-        <button onClick={() => setFilter('confirmed')} className={`px-3 py-1.5 rounded-lg font-medium shadow text-sm transition-all duration-300 ${filter === 'confirmed' ? 'bg-green-400 text-green-900 scale-105' : 'bg-gray-100 text-green-700 hover:bg-green-100'}`}>ยืนยันแล้ว</button>
-      </div>
-
-      <div className="px-2 sm:px-4 md:px-6 pb-4 sm:pb-6">
-        <div className="calendar-wrapper" style={{ minHeight: isMobile ? 420 : 480 }}>
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
-            initialView={isMobile ? 'dayGridMonth' : 'dayGridWeek'}
-            locale={thLocale}
-            now={getNowInThailand()}
-            height={isMobile ? 420 : 480}
-            events={events}
-            eventMouseEnter={handleEventMouseEnter}
-            eventMouseLeave={handleEventMouseLeave}
-            eventClick={handleEventClick}
-            eventContent={renderEventContent}
-            displayEventEnd={true}
-            nextDayThreshold="00:00:00"
-            slotEventOverlap={false}
-            eventOverlap={false}
-            eventMinHeight={30}
-            eventTimeFormat={{
-              hour: '2-digit',
-              minute: '2-digit',
-              meridiem: false
-            }}
-            headerToolbar={{
-              left: 'prev,next today',
-              center: 'title',
-              right: 'dayGridMonth,dayGridWeek,timeGridDay,listWeek',
-            }}
-            buttonText={{
-              today: 'วันนี้',
-              month: 'เดือน',
-              week: 'สัปดาห์',
-              day: 'วัน',
-              list: 'รายการ',
-            }}
-            eventDisplay="block"
-            slotLabelFormat={{
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false,
-              meridiem: false,
-            }}
-            slotDuration="00:30:00"
-            slotLabelInterval="00:30:00"
-            slotMinTime="07:00:00"
-            slotMaxTime="18:00:00"
-            views={{
-              timeGridDay: {
-                slotMinTime: '07:00:00',
-                slotMaxTime: '18:00:00',
-                slotDuration: '00:30:00',
-                slotLabelInterval: '00:30:00',
-                snapDuration: '00:30:00',
-                displayEventEnd: true,
-              },
-              timeGridWeek: {
-                slotMinTime: '07:00:00',
-                slotMaxTime: '18:00:00',
-                slotDuration: '00:30:00',
-                slotLabelInterval: '00:30:00',
-              },
-              dayGridWeek: {
-                dayMaxEvents: false,
-                dayMaxEventRows: false,
-              },
-              dayGridMonth: {
-                dayMaxEvents: isMobile ? 2 : 3,
-                dayMaxEventRows: isMobile ? 2 : 3,
-                moreLinkClick: 'popover',
-                moreLinkText: (num: number) => `+ อีก ${num}`,
-              },
-              listWeek: {
-                listDayFormat: { weekday: 'long', day: 'numeric', month: 'long' },
-                noEventsText: 'ไม่มีการจองในสัปดาห์นี้',
-              },
-            }}
-          />
-        </div>
-
-        {/* Tooltip for event info */}
-        {tooltip.visible && (
-          <>
-            {/* Backdrop for mobile */}
-            {isMobile && (
-              <div
-                className="fixed inset-0 bg-black/30 z-[9998]"
-                onClick={() => setTooltip({ ...tooltip, visible: false })}
-              />
-            )}
-            <div
-              className="tooltip-event"
-              style={{
-                position: 'fixed',
-                left: isMobile ? '50%' : tooltip.x,
-                top: isMobile ? '50%' : tooltip.y,
-                transform: isMobile ? 'translate(-50%, -50%)' : 'none',
-                zIndex: 9999,
-                background: 'rgba(255,255,255,0.98)',
-                border: '1px solid #e5e7eb',
-                borderRadius: '0.75rem',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-                padding: '16px',
-                minWidth: isMobile ? '280px' : '220px',
-                maxWidth: isMobile ? '90vw' : '350px',
-                color: '#1e293b',
-                fontSize: '0.95rem',
-                whiteSpace: 'pre-line',
-                animation: 'fadeIn 0.3s',
-              }}
-            >
-              {isMobile && (
-                <button
-                  onClick={() => setTooltip({ ...tooltip, visible: false })}
-                  className="absolute top-2 right-3 text-gray-400 hover:text-gray-600 text-lg font-bold"
-                >
-                  ✕
-                </button>
-              )}
-              {tooltip.content}
+    <>
+      <div className="bg-gradient-to-br from-blue-100 via-white to-indigo-100 rounded-2xl shadow-2xl border border-blue-200 p-0 relative">
+        {/* Stylish Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 sm:px-6 pt-4 sm:pt-6 pb-2">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="w-10 h-10 flex-shrink-0 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg animate-bounce">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
             </div>
-          </>
-        )}
-
-        {/* Legend for booking status */}
-        <div className="flex flex-wrap gap-4 sm:gap-6 items-center justify-center mt-6 sm:mt-8 animate-fade-in">
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-4 h-4 sm:w-5 sm:h-5 rounded-full" style={{ background: '#facc15', border: '2px solid #fbbf24' }}></span>
-            <span className="text-xs sm:text-sm text-gray-700">รอดำเนินการ (pending)</span>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-700 mb-0 truncate">ตารางการจองห้องประชุม</h2>
+              <p className="text-xs sm:text-sm text-blue-400">ดูตารางการจองห้องประชุมทั้งหมดแบบเรียลไทม์</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-4 h-4 sm:w-5 sm:h-5 rounded-full" style={{ background: '#22c55e', border: '2px solid #16a34a' }}></span>
-            <span className="text-xs sm:text-sm text-gray-700">ยืนยันแล้ว (confirmed)</span>
+          {/* ปุ่มคู่มือ + ปุ่ม refresh */}
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => setShowManual(true)}
+              className="px-3 sm:px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-sm rounded-lg shadow-md hover:from-amber-500 hover:to-orange-600 transition-all duration-300 active:scale-95 flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              <span className="hidden sm:inline">📖 คู่มือการจอง</span>
+              <span className="sm:hidden">📖 คู่มือ</span>
+            </button>
+            <button onClick={fetchEvents} className="px-3 sm:px-4 py-2 bg-blue-500 text-white text-sm rounded-lg shadow-md hover:bg-blue-700 transition-all duration-300 active:scale-95 flex items-center gap-1.5 whitespace-nowrap">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span className="hidden sm:inline">รีเฟรชข้อมูล</span>
+              <span className="sm:hidden">รีเฟรช</span>
+            </button>
           </div>
         </div>
 
-        <style jsx global>{`
+        {/* ปุ่ม filter สถานะ */}
+        <div className="flex flex-wrap gap-2 px-4 sm:px-6 pb-2 mt-2">
+          <button onClick={() => setFilter('all')} className={`px-3 py-1.5 rounded-lg font-medium shadow text-sm transition-all duration-300 ${filter === 'all' ? 'bg-blue-600 text-white scale-105' : 'bg-gray-100 text-blue-700 hover:bg-blue-100'}`}>ทั้งหมด</button>
+          <button onClick={() => setFilter('pending')} className={`px-3 py-1.5 rounded-lg font-medium shadow text-sm transition-all duration-300 ${filter === 'pending' ? 'bg-yellow-400 text-yellow-900 scale-105' : 'bg-gray-100 text-yellow-700 hover:bg-yellow-100'}`}>รอดำเนินการ</button>
+          <button onClick={() => setFilter('confirmed')} className={`px-3 py-1.5 rounded-lg font-medium shadow text-sm transition-all duration-300 ${filter === 'confirmed' ? 'bg-green-400 text-green-900 scale-105' : 'bg-gray-100 text-green-700 hover:bg-green-100'}`}>ยืนยันแล้ว</button>
+        </div>
+
+        <div className="px-2 sm:px-4 md:px-6 pb-4 sm:pb-6">
+          <div className="calendar-wrapper" style={{ minHeight: isMobile ? 420 : 480 }}>
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
+              initialView={isMobile ? 'dayGridMonth' : 'dayGridWeek'}
+              locale={thLocale}
+              now={getNowInThailand()}
+              height={isMobile ? 420 : 480}
+              events={events}
+              eventMouseEnter={handleEventMouseEnter}
+              eventMouseLeave={handleEventMouseLeave}
+              eventClick={handleEventClick}
+              eventContent={renderEventContent}
+              displayEventEnd={true}
+              nextDayThreshold="00:00:00"
+              slotEventOverlap={false}
+              eventOverlap={false}
+              eventMinHeight={30}
+              eventTimeFormat={{
+                hour: '2-digit',
+                minute: '2-digit',
+                meridiem: false
+              }}
+              headerToolbar={{
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,dayGridWeek,timeGridDay,listWeek',
+              }}
+              buttonText={{
+                today: 'วันนี้',
+                month: 'เดือน',
+                week: 'สัปดาห์',
+                day: 'วัน',
+                list: 'รายการ',
+              }}
+              eventDisplay="block"
+              slotLabelFormat={{
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+                meridiem: false,
+              }}
+              slotDuration="00:30:00"
+              slotLabelInterval="00:30:00"
+              slotMinTime="07:00:00"
+              slotMaxTime="18:00:00"
+              views={{
+                timeGridDay: {
+                  slotMinTime: '07:00:00',
+                  slotMaxTime: '18:00:00',
+                  slotDuration: '00:30:00',
+                  slotLabelInterval: '00:30:00',
+                  snapDuration: '00:30:00',
+                  displayEventEnd: true,
+                },
+                timeGridWeek: {
+                  slotMinTime: '07:00:00',
+                  slotMaxTime: '18:00:00',
+                  slotDuration: '00:30:00',
+                  slotLabelInterval: '00:30:00',
+                },
+                dayGridWeek: {
+                  dayMaxEvents: false,
+                  dayMaxEventRows: false,
+                },
+                dayGridMonth: {
+                  dayMaxEvents: isMobile ? 2 : 3,
+                  dayMaxEventRows: isMobile ? 2 : 3,
+                  moreLinkClick: 'popover',
+                  moreLinkText: (num: number) => `+ อีก ${num}`,
+                },
+                listWeek: {
+                  listDayFormat: { weekday: 'long', day: 'numeric', month: 'long' },
+                  noEventsText: 'ไม่มีการจองในสัปดาห์นี้',
+                },
+              }}
+            />
+          </div>
+
+          {/* Tooltip for event info */}
+          {tooltip.visible && (
+            <>
+              {/* Backdrop for mobile */}
+              {isMobile && (
+                <div
+                  className="fixed inset-0 bg-black/30 z-[9998]"
+                  onClick={() => setTooltip({ ...tooltip, visible: false })}
+                />
+              )}
+              <div
+                className="tooltip-event"
+                style={{
+                  position: 'fixed',
+                  left: isMobile ? '50%' : tooltip.x,
+                  top: isMobile ? '50%' : tooltip.y,
+                  transform: isMobile ? 'translate(-50%, -50%)' : 'none',
+                  zIndex: 9999,
+                  background: 'rgba(255,255,255,0.98)',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '0.75rem',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                  padding: '16px',
+                  minWidth: isMobile ? '280px' : '220px',
+                  maxWidth: isMobile ? '90vw' : '350px',
+                  color: '#1e293b',
+                  fontSize: '0.95rem',
+                  whiteSpace: 'pre-line',
+                  animation: 'fadeIn 0.3s',
+                }}
+              >
+                {isMobile && (
+                  <button
+                    onClick={() => setTooltip({ ...tooltip, visible: false })}
+                    className="absolute top-2 right-3 text-gray-400 hover:text-gray-600 text-lg font-bold"
+                  >
+                    ✕
+                  </button>
+                )}
+                {tooltip.content}
+              </div>
+            </>
+          )}
+
+          {/* Legend for booking status */}
+          <div className="flex flex-wrap gap-4 sm:gap-6 items-center justify-center mt-6 sm:mt-8 animate-fade-in">
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-4 h-4 sm:w-5 sm:h-5 rounded-full" style={{ background: '#facc15', border: '2px solid #fbbf24' }}></span>
+              <span className="text-xs sm:text-sm text-gray-700">รอดำเนินการ (pending)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-4 h-4 sm:w-5 sm:h-5 rounded-full" style={{ background: '#22c55e', border: '2px solid #16a34a' }}></span>
+              <span className="text-xs sm:text-sm text-gray-700">ยืนยันแล้ว (confirmed)</span>
+            </div>
+          </div>
+
+          <style jsx global>{`
           /* =========== RESPONSIVE CALENDAR =========== */
           /* ให้ scroller ใน timeGrid สามารถ scroll แนวตั้งได้ */
           .fc .fc-timegrid .fc-scroller {
@@ -669,7 +683,44 @@ export default function CalendarComponent() {
             }
           }
         `}</style>
+        </div>
       </div>
-    </div>
+
+      {/* PDF Manual Modal */}
+      {showManual && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowManual(false)}
+          onKeyDown={(e) => { if (e.key === 'Escape') setShowManual(false); }}
+        >
+          <div
+            className="relative w-[95vw] h-[90vh] max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-white">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                📖 คู่มือการจองห้องประชุม
+              </h3>
+              <button
+                onClick={() => setShowManual(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/40 transition-all duration-200 text-white text-xl font-bold"
+                title="ปิด"
+              >
+                ✕
+              </button>
+            </div>
+            {/* PDF iframe */}
+            <iframe
+              src="/booking_manual.pdf"
+              className="w-full border-none"
+              style={{ height: 'calc(90vh - 52px)' }}
+              title="คู่มือการจองห้องประชุม"
+            />
+          </div>
+        </div>
+      )}
+
+    </>
   );
 }
