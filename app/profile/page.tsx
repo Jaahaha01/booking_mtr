@@ -28,6 +28,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [showVerificationPopup, setShowVerificationPopup] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [showLineManual, setShowLineManual] = useState(false);
 
   useEffect(() => {
     fetch('/api/profile')
@@ -192,7 +193,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-wrap justify-between items-center mb-8 gap-3">
           <Link
             href="/"
             className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors duration-200 font-medium"
@@ -202,7 +203,19 @@ export default function ProfilePage() {
             </svg>
             กลับหน้าหลัก
           </Link>
-          <h1 className="text-3xl font-bold text-gray-800">โปรไฟล์ของคุณ</h1>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowLineManual(true)}
+              className="px-3 sm:px-4 py-2 bg-gradient-to-r from-green-400 to-green-600 text-white text-sm rounded-lg shadow-md hover:from-green-500 hover:to-green-700 transition-all duration-300 active:scale-95 flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              <span className="hidden sm:inline">คู่มือแจ้งเตือนไลน์</span>
+              <span className="sm:hidden">📖คู่มือไลน์</span>
+            </button>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">โปรไฟล์ของคุณ</h1>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -575,6 +588,49 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* LINE Notify Manual Modal */}
+      {showLineManual && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowLineManual(false)}
+          onKeyDown={(e) => { if (e.key === 'Escape') setShowLineManual(false); }}
+        >
+          <div
+            className="relative w-[95vw] h-[90vh] max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+            style={{ animation: 'fadeIn 0.3s' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-green-400 to-green-600 text-white">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                📖 คู่มือการแจ้งเตือนผ่าน LINE
+              </h3>
+              <button
+                onClick={() => setShowLineManual(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/40 transition-all duration-200 text-white text-xl font-bold"
+                title="ปิด"
+              >
+                ✕
+              </button>
+            </div>
+            {/* PDF iframe */}
+            <iframe
+              src="/Line_notify.pdf"
+              className="w-full border-none"
+              style={{ height: 'calc(90vh - 52px)' }}
+              title="คู่มือการแจ้งเตือนผ่าน LINE"
+            />
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div >
   );
 }
