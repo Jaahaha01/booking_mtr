@@ -56,9 +56,23 @@ export default function AdminFeedbacksPage() {
                             <div key={idx} className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 p-6 flex flex-col md:flex-row gap-6 hover:border-gray-700 transition-colors duration-200">
                                 {/* User Info */}
                                 <div className="flex items-start gap-4 md:w-1/4 min-w-[200px]">
-                                    <div className="w-11 h-11 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                                        <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                                    </div>
+                                    {item.user?.image ? (
+                                        <>
+                                            <img
+                                                src={item.user.image}
+                                                alt={`${item.user?.fname} ${item.user?.lname}`}
+                                                className="w-11 h-11 rounded-xl object-cover border border-indigo-500/20"
+                                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }}
+                                            />
+                                            <div className="w-11 h-11 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 hidden">
+                                                <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="w-11 h-11 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                                            <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                        </div>
+                                    )}
                                     <div>
                                         <h3 className="font-semibold text-gray-200">{item.user?.fname} {item.user?.lname}</h3>
                                         <div className="flex items-center gap-2 mt-1">

@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
     try {
         const feedbacks = await db`
-      SELECT f.*, u.fname, u.lname, r.name as room_name, b.title as booking_title
+      SELECT f.*, u.fname, u.lname, u.image as user_image, r.name as room_name, b.title as booking_title
       FROM feedbacks f
       LEFT JOIN bookings b ON f.booking_id = b.booking_id
       LEFT JOIN users u ON b.user_id = u.user_id
@@ -19,7 +19,8 @@ export async function GET() {
             ...f,
             user: {
                 fname: f.fname,
-                lname: f.lname
+                lname: f.lname,
+                image: f.user_image
             }
         }));
 

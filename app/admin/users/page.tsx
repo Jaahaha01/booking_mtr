@@ -273,9 +273,10 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        {/* Users Table */}
+        {/* Users Table - Desktop */}
         <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-800">
@@ -395,6 +396,119 @@ export default function AdminUsersPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden divide-y divide-gray-800/50">
+            {filteredUsers.map((userItem) => (
+              <div key={userItem.user_id} className={`p-4 ${userItem.role === 'staff' ? 'border-l-2 border-l-cyan-500/60 bg-cyan-500/5' : ''}`}>
+                {/* User Info Row */}
+                <div className="flex items-center gap-3 mb-3">
+                  {userItem.image ? (
+                    <img src={userItem.image} alt={`${userItem.fname} ${userItem.lname}`} className="w-10 h-10 rounded-xl object-cover border border-gray-700 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }} />
+                  ) : null}
+                  <div className={`w-10 h-10 ${userItem.role === 'staff' ? 'bg-cyan-500/20' : 'bg-indigo-500/20'} rounded-xl flex items-center justify-center shrink-0 ${userItem.image ? 'hidden' : ''}`}>
+                    <svg className={`w-5 h-5 ${userItem.role === 'staff' ? 'text-cyan-400' : 'text-indigo-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-gray-200 flex items-center gap-2 flex-wrap">
+                      {userItem.fname} {userItem.lname}
+                      {userItem.role === 'staff' && (
+                        <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 rounded-full border border-cyan-500/20">
+                          เจ้าหน้าที่
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-500 truncate">{userItem.email}</div>
+                    <div className="text-xs text-gray-600">@{userItem.username}</div>
+                  </div>
+                  <span className={`px-2 py-1 rounded-lg text-[10px] font-medium border shrink-0 ${userItem.verification_status === 'approved'
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    : userItem.verification_status === 'pending'
+                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      : userItem.verification_status === 'rejected'
+                        ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                        : 'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                    }`}>
+                    {userItem.verification_status === 'approved' ? '✓ ยืนยัน' : userItem.verification_status === 'pending' ? '⏳ รอ' : userItem.verification_status === 'rejected' ? '✗ ปฏิเสธ' : '— ไม่ยืนยัน'}
+                  </span>
+                </div>
+
+                {/* Selectors Row */}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div>
+                    <label className="block text-[10px] text-gray-600 mb-1 uppercase tracking-wider">บทบาท</label>
+                    <select
+                      value={userItem.role}
+                      onChange={(e) => handleUpdateUser(userItem.user_id, 'role', e.target.value)}
+                      disabled={updating === userItem.user_id}
+                      className="w-full text-xs bg-[#1a1d21] border border-gray-700 rounded-lg px-2.5 py-2 text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <option value="user">ผู้ใช้</option>
+                      <option value="student">นักศึกษา</option>
+                      <option value="teacher">อาจารย์</option>
+                      {user?.role === 'admin' && (<option value="staff">เจ้าหน้าที่</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-gray-600 mb-1 uppercase tracking-wider">สถานะยืนยัน</label>
+                    <select
+                      value={userItem.verification_status || ''}
+                      onChange={(e) => handleUpdateUser(userItem.user_id, 'verification_status', e.target.value || null)}
+                      disabled={updating === userItem.user_id}
+                      className="w-full text-xs bg-[#1a1d21] border border-gray-700 rounded-lg px-2.5 py-2 text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <option value="">ยังไม่ยืนยัน</option>
+                      <option value="pending">รอยืนยัน</option>
+                      <option value="approved">ยืนยันแล้ว</option>
+                      <option value="rejected">ถูกปฏิเสธ</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Date + Actions Row */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600">สมัครเมื่อ {new Date(userItem.created_at).toLocaleDateString('th-TH')}</span>
+                  <div className="flex gap-1.5">
+                    {updating === userItem.user_id ? (
+                      <div className="relative w-5 h-5"><div className="absolute inset-0 rounded-full border-2 border-transparent border-t-indigo-500 animate-spin"></div></div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => {
+                            const message = `<div class="text-left space-y-3">
+                              <div><p class="font-semibold text-gray-400 text-xs uppercase tracking-wider">ชื่อ-นามสกุล</p><p class="text-gray-200">${userItem.fname || '-'} ${userItem.lname || '-'}</p></div>
+                              <div><p class="font-semibold text-gray-400 text-xs uppercase tracking-wider">อีเมล</p><p class="text-gray-200 break-all">${userItem.email || '-'}</p></div>
+                              <div><p class="font-semibold text-gray-400 text-xs uppercase tracking-wider">เบอร์โทร</p><p class="text-gray-200">${userItem.phone || '-'}</p></div>
+                              <div><p class="font-semibold text-gray-400 text-xs uppercase tracking-wider">องค์กร</p><p class="text-gray-200">${userItem.organization || '-'}</p></div>
+                              <div><p class="font-semibold text-gray-400 text-xs uppercase tracking-wider">ที่อยู่</p><p class="text-gray-200">${userItem.address || '-'}</p></div>
+                              <div><p class="font-semibold text-gray-400 text-xs uppercase tracking-wider">หมายเลขบัตรประชาชน</p><p class="text-gray-200">${userItem.identity_card || '-'}</p></div>
+                            </div>`;
+                            Swal.fire({ title: 'ข้อมูลยืนยันตัวตน', html: message, icon: 'info', confirmButtonText: 'ปิด', confirmButtonColor: '#6366f1', width: 'min(90vw, 500px)', background: '#23272b', color: '#e5e7eb' });
+                          }}
+                          className="px-2.5 py-1.5 bg-indigo-500/10 text-indigo-400 rounded-lg text-[11px] font-medium hover:bg-indigo-500/20 transition-colors border border-indigo-500/20"
+                        >
+                          ดูข้อมูล
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(userItem.user_id)}
+                          className="px-2.5 py-1.5 bg-red-500/10 text-red-400 rounded-lg text-[11px] font-medium hover:bg-red-500/20 transition-colors border border-red-500/20"
+                          disabled={userItem.user_id === user?.user_id}
+                        >
+                          ลบ
+                        </button>
+                        <button
+                          onClick={() => handleResetPassword(userItem.user_id)}
+                          className="px-2.5 py-1.5 bg-amber-500/10 text-amber-400 rounded-lg text-[11px] font-medium hover:bg-amber-500/20 transition-colors border border-amber-500/20"
+                        >
+                          รีเซ็ตรหัส
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
           {filteredUsers.length === 0 && (
