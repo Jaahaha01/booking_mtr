@@ -336,15 +336,15 @@ export default function AdminBackupPage() {
                         <p className="text-gray-500 mt-1 ml-5 text-sm">จัดการการสำรองข้อมูลของระบบ • เฉพาะผู้ดูแลระบบ</p>
                     </div>
                     {lastBackup && (
-                        <div className="flex items-center gap-2 bg-[#23272b] px-4 py-2.5 rounded-xl border border-gray-800">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                            <span className="text-gray-400 text-sm">ตรวจสอบล่าสุด: {new Date(lastBackup).toLocaleString('th-TH')}</span>
+                        <div className="flex items-center gap-2 bg-[#23272b] px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-gray-800">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                            <span className="text-gray-400 text-xs sm:text-sm">ตรวจสอบล่าสุด: {new Date(lastBackup).toLocaleString('th-TH')}</span>
                         </div>
                     )}
                 </div>
 
                 {/* Database Summary Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
                     {[
                         { label: 'ผู้ใช้', count: summary?.users || 0, icon: '👥' },
                         { label: 'การจอง', count: summary?.bookings || 0, icon: '📅' },
@@ -354,28 +354,28 @@ export default function AdminBackupPage() {
                     ].map(({ label, count, icon }) => (
                         <div
                             key={label}
-                            className="bg-gradient-to-br from-[#23272b] to-[#1e2328] p-5 rounded-2xl border border-gray-800 hover:border-gray-700 transition-colors duration-200"
+                            className="bg-gradient-to-br from-[#23272b] to-[#1e2328] p-3 sm:p-5 rounded-2xl border border-gray-800 hover:border-gray-700 transition-colors duration-200"
                         >
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="text-lg">{icon}</span>
-                                <span className="text-gray-500 text-xs font-medium uppercase tracking-wider">{label}</span>
+                            <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+                                <span className="text-base sm:text-lg">{icon}</span>
+                                <span className="text-gray-500 text-[10px] sm:text-xs font-medium uppercase tracking-wider">{label}</span>
                             </div>
-                            <p className="text-2xl font-bold text-white">{count.toLocaleString()}</p>
-                            <p className="text-xs text-gray-600 mt-1">รายการ</p>
+                            <p className="text-xl sm:text-2xl font-bold text-white">{count.toLocaleString()}</p>
+                            <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 sm:mt-1">รายการ</p>
                         </div>
                     ))}
                 </div>
 
                 {/* Total Records Banner */}
-                <div className="bg-gradient-to-r from-indigo-600/10 via-purple-600/10 to-cyan-600/10 border border-indigo-500/20 rounded-2xl p-5 mb-8 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
-                        <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-gradient-to-r from-indigo-600/10 via-purple-600/10 to-cyan-600/10 border border-indigo-500/20 rounded-2xl p-4 sm:p-5 mb-8 flex items-center gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
                         </svg>
                     </div>
-                    <div>
-                        <p className="text-white font-semibold text-lg">{totalRecords.toLocaleString()} รายการทั้งหมด</p>
-                        <p className="text-gray-400 text-sm">ข้อมูลทั้งหมดในฐานข้อมูลระบบจองห้องประชุม</p>
+                    <div className="min-w-0">
+                        <p className="text-white font-semibold text-base sm:text-lg">{totalRecords.toLocaleString()} รายการทั้งหมด</p>
+                        <p className="text-gray-400 text-xs sm:text-sm truncate">ข้อมูลทั้งหมดในฐานข้อมูลระบบจองห้องประชุม</p>
                     </div>
                 </div>
 
@@ -383,18 +383,18 @@ export default function AdminBackupPage() {
                 <div className="mb-8">
                     <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
                         <div className="h-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600"></div>
-                        <div className="p-6">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+                        <div className="p-4 sm:p-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
                                 <div className="flex-1">
-                                    <div className="flex items-center gap-4 mb-3">
-                                        <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform duration-300 shrink-0">
-                                            <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="flex items-center gap-3 sm:gap-4 mb-3">
+                                        <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                                            <svg className="w-5 h-5 sm:w-7 sm:h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                             </svg>
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-white">สำรองข้อมูลระบบทั้งหมด</h3>
-                                            <p className="text-gray-400 text-sm mt-1">รวมข้อมูลฐานข้อมูล</p>
+                                            <h3 className="text-lg sm:text-xl font-bold text-white">สำรองข้อมูลระบบทั้งหมด</h3>
+                                            <p className="text-gray-400 text-xs sm:text-sm mt-0.5 sm:mt-1">รวมข้อมูลฐานข้อมูล</p>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 ml-0 sm:ml-[4.5rem]">
@@ -432,17 +432,17 @@ export default function AdminBackupPage() {
                 {/* ============ Restore Section ============ */}
                 <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 overflow-hidden mb-8">
                     <div className="h-1.5 bg-gradient-to-r from-orange-500 to-red-500"></div>
-                    <div className="p-6">
-                        <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-3">
+                    <div className="p-4 sm:p-6">
+                        <h3 className="text-base sm:text-lg font-bold text-white mb-2 flex items-center gap-3">
                             <span className="w-1.5 h-6 rounded-full bg-orange-500"></span>
                             กู้คืนข้อมูล
                         </h3>
-                        <p className="text-gray-500 text-sm mb-6">อัปโหลดไฟล์สำรอง (.json) เพื่อกู้คืนข้อมูลกลับเข้าสู่ระบบ</p>
+                        <p className="text-gray-500 text-xs sm:text-sm mb-4 sm:mb-6">อัปโหลดไฟล์สำรอง (.json) เพื่อกู้คืนข้อมูลกลับเข้าสู่ระบบ</p>
 
                         {/* File Upload Area */}
                         <div className="mb-6">
                             <label className="block">
-                                <div className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 ${restoreFile ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-gray-700 hover:border-indigo-500/40 hover:bg-indigo-500/5'}`}>
+                                <div className={`border-2 border-dashed rounded-2xl p-5 sm:p-8 text-center cursor-pointer transition-all duration-200 ${restoreFile ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-gray-700 hover:border-indigo-500/40 hover:bg-indigo-500/5'}`}>
                                     {restoreFile ? (
                                         <div>
                                             <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-3 border border-emerald-500/20">
@@ -523,7 +523,7 @@ export default function AdminBackupPage() {
                 </div>
 
                 {/* Backup History */}
-                <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 p-6 mb-8">
+                <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 p-4 sm:p-6 mb-8">
                     <div className="flex flex-col gap-4 mb-6">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <h3 className="text-lg font-bold text-white flex items-center gap-3">
@@ -674,10 +674,10 @@ export default function AdminBackupPage() {
                                             </div>
 
                                             {/* Info Row */}
-                                            <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mb-3">
                                                 <span>{log.file_size || '-'}</span>
                                                 <span className="text-gray-700">•</span>
-                                                <span>{log.fname ? `${log.fname} ${log.lname}` : `ID: ${log.created_by}`}</span>
+                                                <span className="truncate max-w-[120px]">{log.fname ? `${log.fname} ${log.lname}` : `ID: ${log.created_by}`}</span>
                                                 <span className="text-gray-700">•</span>
                                                 <span>{new Date(log.created_at).toLocaleDateString('th-TH')}</span>
                                             </div>
@@ -742,21 +742,21 @@ export default function AdminBackupPage() {
                 </div>
 
                 {/* Info Section */}
-                <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 p-6">
-                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-3">
+                <div className="bg-gradient-to-br from-[#23272b] to-[#1e2328] rounded-2xl border border-gray-800 p-4 sm:p-6">
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-3">
                         <span className="w-1.5 h-6 rounded-full bg-amber-500"></span>
                         คำแนะนำการสำรองข้อมูล
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                         {[
                             { icon: '🔒', title: 'ความปลอดภัย', desc: 'ไฟล์สำรองรวมรหัสผ่าน (bcrypt) เก็บไฟล์ไว้ในที่ปลอดภัยเท่านั้น' },
                             { icon: '📁', title: 'รูปแบบไฟล์', desc: 'ฐานข้อมูลสำรองเป็น JSON' },
                             { icon: '📅', title: 'ความถี่', desc: 'แนะนำให้สำรองข้อมูลอย่างน้อยสัปดาห์ละ 1 ครั้ง' },
                             { icon: '💾', title: 'การจัดเก็บ', desc: 'เก็บไฟล์สำรองไว้ในที่ปลอดภัย เช่น Google Drive หรือ OneDrive' },
                         ].map(({ icon, title, desc }) => (
-                            <div key={title} className="flex items-start gap-3 p-4 bg-[#1a1d21] rounded-xl border border-gray-800">
-                                <span className="text-xl mt-0.5">{icon}</span>
-                                <div>
+                            <div key={title} className="flex items-start gap-3 p-3 sm:p-4 bg-[#1a1d21] rounded-xl border border-gray-800">
+                                <span className="text-lg sm:text-xl mt-0.5">{icon}</span>
+                                <div className="min-w-0">
                                     <p className="text-white font-medium text-sm">{title}</p>
                                     <p className="text-gray-500 text-xs mt-1 leading-relaxed">{desc}</p>
                                 </div>
